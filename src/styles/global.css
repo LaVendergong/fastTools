@@ -1,0 +1,50 @@
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', 'PingFang SC',
+    'Microsoft YaHei', sans-serif;
+  --panel: rgba(248, 248, 248, 0.72);
+  --panel-solid: #f6f6f6;
+  --border: rgba(0, 0, 0, 0.09);
+  --text: #1d1d1f;
+  --text-dim: #86868b;
+  --accent: #007aff;
+  --hover: rgba(0, 0, 0, 0.06);
+  --radius: 11px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  background: radial-gradient(120% 90% at 15% 10%, #6f8ffb 0%, rgba(111, 143, 251, 0) 55%),
+    radial-gradient(110% 80% at 85% 20%, #b06ef5 0%, rgba(176, 110, 245, 0) 50%),
+    radial-gradient(120% 100% at 60% 100%, #f7a8d8 0%, rgba(247, 168, 216, 0) 60%), #4c5bd4;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+input {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}

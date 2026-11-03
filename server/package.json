@@ -1,0 +1,16 @@
+{
+  "name": "toolbox-db-gateway",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "工具箱的可选附加服务：把本机数据库暴露给前端（仅允许 127.0.0.1 / localhost）",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^5.3.0",
+    "mysql2": "^3.24.6",
+    "pg": "^8.23.1",
+    "ssh2": "^1.17.0"
+  }
+}

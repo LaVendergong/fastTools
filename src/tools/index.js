@@ -6,6 +6,9 @@ import MarkdownNotes from './markdown/MarkdownNotes.vue'
 import SysInfoTool from './sysinfo/SysInfoTool.vue'
 import HttpReference from './http-ref/HttpReference.vue'
 import HtmlEntityTool from './html-entity/HtmlEntityTool.vue'
+import ChineseConverter from './chinese/ChineseConverter.vue'
+import PaletteExtractor from './palette/PaletteExtractor.vue'
+import LoanTool from './loan/LoanTool.vue'
 import Base64Tool from './base64/Base64Tool.vue'
 import HttpClient from './http/HttpClient.vue'
 import UnicodeTool from './unicode/UnicodeTool.vue'
@@ -38,6 +41,16 @@ import WorldClock from './worldclock/WorldClock.vue'
 import WatermarkTool from './watermark/WatermarkTool.vue'
 import QrDecoder from './qr-decode/QrDecoder.vue'
 import AesTool from './crypto/AesTool.vue'
+import ApiCatalog from './api-catalog/ApiCatalog.vue'
+import GitignoreGenerator from './gitignore/GitignoreGenerator.vue'
+import CurlConverter from './curl/CurlConverter.vue'
+import HmacTool from './hmac/HmacTool.vue'
+import TotpTool from './totp/TotpTool.vue'
+import SubnetCalculator from './subnet/SubnetCalculator.vue'
+import DevSetupGuide from './devsetup/DevSetupGuide.vue'
+import ImageCompressor from './image-batch/ImageCompressor.vue'
+import DockerComposeConverter from './docker/DockerComposeConverter.vue'
+import JsonGraph from './json-graph/JsonGraph.vue'
 
 /**
  * 工具注册表：新增工具只需往 tools 里加一项。
@@ -381,6 +394,96 @@ const rawTools = [
     component: AesTool,
   },
   {
+    id: 'api-catalog',
+    name: '开放接口',
+    desc: '免费公共 API 合集，可在线试调',
+    glyph: '🔌',
+    hue: 165,
+    category: 'dev',
+    component: ApiCatalog,
+  },
+  {
+    id: 'gitignore',
+    name: 'gitignore 生成',
+    desc: '按语言/框架/编辑器生成 .gitignore',
+    glyph: '🚫',
+    hue: 20,
+    category: 'dev',
+    component: GitignoreGenerator,
+  },
+  {
+    id: 'curl',
+    name: 'cURL 转代码',
+    desc: '把抓包命令转成 fetch / axios / Java 等代码',
+    glyph: '⌁',
+    hue: 285,
+    category: 'dev',
+    component: CurlConverter,
+  },
+  {
+    id: 'hmac',
+    name: 'HMAC 签名',
+    desc: '按密钥生成签名，调试开放平台鉴权',
+    glyph: '⚿',
+    hue: 260,
+    category: 'dev',
+    component: HmacTool,
+  },
+  {
+    id: 'totp',
+    name: '动态验证码',
+    desc: 'TOTP 两步验证码，本地实时生成',
+    glyph: '⏲',
+    hue: 40,
+    category: 'dev',
+    component: TotpTool,
+  },
+  {
+    id: 'subnet',
+    name: 'IPv4 子网',
+    desc: '网段、掩码、可用范围与子网拆分',
+    glyph: '⊞',
+    hue: 200,
+    category: 'dev',
+    component: SubnetCalculator,
+  },
+  {
+    id: 'devsetup',
+    name: '装机指引',
+    desc: '按技术栈装齐工具，一键生成安装命令',
+    glyph: '🧰',
+    hue: 145,
+    category: 'system',
+    component: DevSetupGuide,
+  },
+  {
+    id: 'image-compress',
+    name: '图片压缩',
+    desc: '批量压缩、转 WebP 与缩放尺寸',
+    glyph: '🗜️',
+    hue: 300,
+    category: 'media',
+    component: ImageCompressor,
+  },
+  {
+    id: 'compose',
+    name: 'Docker 转换',
+    desc: 'docker run 命令转 docker-compose.yml',
+    glyph: '🐳',
+    hue: 195,
+    category: 'dev',
+    component: DockerComposeConverter,
+  },
+  {
+    id: 'json-graph',
+    name: 'JSON 可视化',
+    desc: '结构画成节点图，可折叠与导出',
+    glyph: '◈',
+    hue: 250,
+    category: 'dev',
+    component: JsonGraph,
+  },
+  {
     id: 'sysinfo',
     name: '设备信息',
     desc: '浏览器、屏幕、网络与能力检测',
@@ -406,6 +509,33 @@ const rawTools = [
     hue: 30,
     category: 'encode',
     component: HtmlEntityTool,
+  },
+  {
+    id: 'chinese',
+    name: '简繁转换',
+    desc: '简繁互转，含台湾 / 香港用词差异',
+    glyph: '文',
+    hue: 0,
+    category: 'encode',
+    component: ChineseConverter,
+  },
+  {
+    id: 'palette',
+    name: '图片取色',
+    desc: '提取图片主色，生成配色与 CSS 变量',
+    glyph: '🎨',
+    hue: 300,
+    category: 'color',
+    component: PaletteExtractor,
+  },
+  {
+    id: 'loan',
+    name: '房贷 / 个税',
+    desc: '等额本息、等额本金与个税试算',
+    glyph: '🏠',
+    hue: 100,
+    category: 'daily',
+    component: LoanTool,
   },
 ]
 

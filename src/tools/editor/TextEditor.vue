@@ -493,9 +493,15 @@ function onOpenFileRequest({ handle, name }) {
   loadedFromRequest = true
   pendingFile.handle = null
   pendingFile.name = ''
-  if (dirty.value && !window.confirm(CLOSE_CONFIRM)) {
-    loadedFromRequest = false
-    return
+
+  // 已绑定磁盘文件的先自动保存，避免每次都弹确认打断；未命名的才询问
+  if (dirty.value) {
+    if (fileHandle.value?.createWritable) {
+      save()
+    } else if (!window.confirm(CLOSE_CONFIRM)) {
+      loadedFromRequest = false
+      return
+    }
   }
   openHandle(handle, name)
 }

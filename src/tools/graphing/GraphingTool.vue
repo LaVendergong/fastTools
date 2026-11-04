@@ -37,7 +37,8 @@ const viewLabel = computed(
   () => `x: ${fmt(view.xMin)} ~ ${fmt(view.xMax)}`,
 )
 
-const stripY = (text) => text.replace(/^\s*y\s*=\s*/i, '').trim()
+// 去掉开头形如 "y =" / "r =" / "f = " 的左边（参数定义 a = 2 已被 isParamDef 提前排除）
+const stripY = (text) => text.replace(/^\s*[a-zA-Zθ]\s*=\s*/, '').trim()
 const isParamDef = (text) => /^\s*[a-zA-Z]\w*\s*=\s*-?\d*\.?\d+\s*$/.test(text)
 
 function fmt(n) {
@@ -57,7 +58,7 @@ function niceStep(span, target) {
 }
 
 function varsAt(x) {
-  const vars = { x }
+  const vars = { x, theta: 0 }
   for (const p of params.value) vars[p.name] = p.value
   return vars
 }
@@ -174,6 +175,43 @@ function drawCurves(ctx, w, h) {
 
     let started = false
     let firstError = ''
+
+    // 极坐标：r = f(theta)，转成 x = r·cosθ、y = r·sinθ
+    if (e.polar) {
+      const steps = 900
+      for (let i = 0; i <= steps; i++) {
+        const theta = (i / steps) * Math.PI * 4
+        Object.assign(vars, { x: 0, theta })
+        let r
+        try {
+          r = evaluate(body, { vars })
+        } catch (err) {
+          firstError = err.message
+          break
+        }
+        if (!Number.isFinite(r)) {
+          started = false
+          continue
+        }
+        const wx = r * Math.cos(theta)
+        const wy = r * Math.sin(theta)
+        const px = toScreenX(wx)
+        const py = toScreenY(wy)
+        if (!Number.isFinite(px) || !Number.isFinite(py) || py < -h || py > h * 2) {
+          started = false
+          continue
+        }
+        if (started) ctx.lineTo(px, py)
+        else {
+          ctx.moveTo(px, py)
+          started = true
+        }
+      }
+      ctx.stroke()
+      if (e.error !== firstError) e.error = firstError
+      continue
+    }
+
     for (let px = 0; px <= w; px += 1) {
       const x = toWorldX(px)
       Object.assign(vars, { x })
@@ -356,6 +394,7 @@ function addExpression() {
     text: '',
     color: COLORS[expressions.value.length % COLORS.length],
     visible: true,
+    polar: false,
     error: '',
   })
 }
@@ -390,13 +429,43 @@ function persist() {
 }
 
 watch(
-  () => expressions.value.map((e) => `${e.id}|${e.text}|${e.visible}|${e.color}`).join(';'),
+  () => expressions.value.map((e) => `${e.id}|${e.text}|${e.visible}|${e.color}|${e.polar}`).join(';'),
   () => {
     syncParams()
     draw()
     persist()
   },
 )
+
+/* 参数动画：让滑块自动往复变化 */
+const animating = ref({})
+let rafId = null
+
+function toggleAnim(p) {
+  if (animating.value[p.name]) {
+    animating.value[p.name] = false
+    return
+  }
+  animating.value[p.name] = true
+  let dir = 1
+  const stepSize = (p.max - p.min) / 240
+
+  const step = () => {
+    if (!animating.value[p.name]) return
+    let next = p.value + dir * stepSize
+    if (next >= p.max) {
+      next = p.max
+      dir = -1
+    } else if (next <= p.min) {
+      next = p.min
+      dir = 1
+    }
+    p.value = Number(next.toFixed(4))
+    draw()
+    rafId = requestAnimationFrame(step)
+  }
+  rafId = requestAnimationFrame(step)
+}
 
 watch(
   () => params.value.map((p) => `${p.name}|${p.value}`).join(';'),
@@ -442,12 +511,20 @@ onBeforeUnmount(() => {
             @click="e.visible = !e.visible"
             @contextmenu.prevent="setColor(e)"
           />
+          <button
+            class="mode-btn"
+            :class="{ polar: e.polar }"
+            :title="e.polar ? '极坐标：r = f(theta)' : '直角坐标：y = f(x)'"
+            @click="e.polar = !e.polar"
+          >
+            {{ e.polar ? 'r' : 'y' }}
+          </button>
           <div class="expr-main">
             <input
               v-model="e.text"
               class="input"
               spellcheck="false"
-              placeholder="y = sin(x)"
+              :placeholder="e.polar ? 'r = 3*cos(2*theta)' : 'y = sin(x)'"
               @keydown.enter="addExpression"
             />
             <p v-if="e.error" class="err">{{ e.error }}</p>
@@ -461,6 +538,14 @@ onBeforeUnmount(() => {
       <div class="params">
         <p class="params-title">参数（输入 a = 2 自动生成滑块）</p>
         <div v-for="p in params" :key="p.name" class="param">
+          <button
+            class="anim"
+            :class="{ on: animating[p.name] }"
+            :title="animating[p.name] ? '暂停动画' : '播放动画'"
+            @click="toggleAnim(p)"
+          >
+            {{ animating[p.name] ? '❚❚' : '▶' }}
+          </button>
           <span class="pname">{{ p.name }}</span>
           <input
             v-model.number="p.value"
@@ -525,9 +610,9 @@ onBeforeUnmount(() => {
   flex-direction: column;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--panel-bg);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .side-head {
   flex: none;
@@ -535,7 +620,7 @@ onBeforeUnmount(() => {
   align-items: center;
   padding: 7px 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
   font-size: 12px;
   font-weight: 600;
 }
@@ -595,7 +680,7 @@ onBeforeUnmount(() => {
 .err {
   margin: 3px 0 0;
   font-size: 10.5px;
-  color: #d70015;
+  color: var(--danger);
   line-height: 1.4;
 }
 .del {
@@ -610,7 +695,7 @@ onBeforeUnmount(() => {
   opacity: 1;
 }
 .del:hover {
-  color: #d70015;
+  color: var(--danger);
 }
 .add {
   width: 100%;
@@ -642,6 +727,35 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 7px;
   margin-bottom: 6px;
+}
+.mode-btn {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+  border-radius: 5px;
+  background: var(--fill-2);
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+.mode-btn.polar {
+  background: rgba(199, 68, 64, 0.14);
+  color: #c74440;
+}
+.anim {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  font-size: 8px;
+  color: var(--text-dim);
+  background: var(--fill-1);
+}
+.anim.on {
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 .pname {
   flex: none;
@@ -688,9 +802,9 @@ onBeforeUnmount(() => {
   flex-direction: column;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--panel-bg);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .toolbar {
   flex: none;
@@ -699,13 +813,13 @@ onBeforeUnmount(() => {
   gap: 6px;
   padding: 6px 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
 }
 .toolbar button {
   padding: 3px 10px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--panel-bg);
   font-size: 11.5px;
 }
 .toolbar button:hover {

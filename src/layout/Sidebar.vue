@@ -40,19 +40,24 @@ const counts = computed(() => {
 .sidebar {
   width: 208px;
   flex: none;
-  padding: 12px 10px;
+  padding: 10px 8px;
   border-right: 1px solid var(--border);
-  background: rgba(246, 246, 246, 0.55);
+  background: var(--sidebar-bg);
   backdrop-filter: blur(30px);
   overflow-y: auto;
 }
 .section-title {
-  margin: 10px 8px 4px;
-  font-size: 11px;
+  margin: 12px 8px 5px;
+  font-size: 10.5px;
   font-weight: 600;
-  color: var(--text-dim);
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+}
+.section-title:first-child {
+  margin-top: 2px;
 }
 .row {
+  position: relative;
   width: 100%;
   display: flex;
   align-items: center;
@@ -60,16 +65,19 @@ const counts = computed(() => {
   padding: 5px 8px;
   border-radius: 6px;
   text-align: left;
+  color: var(--text);
 }
 .row:hover {
-  background: var(--hover);
+  background: var(--fill-1);
 }
 .row.on {
-  background: var(--accent);
-  color: #fff;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 500;
 }
 .row.on .count {
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--accent);
+  opacity: 0.75;
 }
 .name {
   flex: 1;
@@ -78,7 +86,8 @@ const counts = computed(() => {
   text-overflow: ellipsis;
 }
 .count {
-  color: var(--text-dim);
+  font-size: 11px;
+  color: var(--text-faint);
   font-variant-numeric: tabular-nums;
 }
 </style>

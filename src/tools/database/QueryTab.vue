@@ -281,9 +281,9 @@ function pickHistory(item) {
   flex-direction: column;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--panel-bg);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .head {
   position: relative;
@@ -293,7 +293,7 @@ function pickHistory(item) {
   gap: 8px;
   padding: 6px 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
 }
 .title {
   font-size: 12px;
@@ -335,8 +335,8 @@ function pickHistory(item) {
   padding: 4px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  background: var(--panel-bg);
+  box-shadow: var(--shadow-2);
 }
 .history-item {
   display: block;
@@ -381,7 +381,7 @@ function pickHistory(item) {
   padding: 4px;
   border: 1px solid var(--border);
   border-radius: 7px;
-  background: #fff;
+  background: var(--panel-bg);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
   max-width: calc(100% - 24px);
   overflow-x: auto;
@@ -407,7 +407,7 @@ function pickHistory(item) {
   white-space: nowrap;
 }
 .mini.err {
-  color: #d70015;
+  color: var(--danger);
 }
 .table-wrap {
   flex: 1;
@@ -431,7 +431,7 @@ function pickHistory(item) {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: #fafafa;
+  background: var(--surface-4);
   font-weight: 600;
 }
 .grid tbody tr:hover {
@@ -440,7 +440,7 @@ function pickHistory(item) {
 .grid .rn {
   color: var(--text-dim);
   text-align: right;
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
 }
 .grid td.null {
   color: var(--text-dim);
@@ -465,7 +465,7 @@ function pickHistory(item) {
   color: var(--text-dim);
 }
 .empty-state .err-text {
-  color: #d70015;
+  color: var(--danger);
   font-family: 'SF Mono', Menlo, Consolas, monospace;
   font-size: 12px;
   max-width: 60ch;

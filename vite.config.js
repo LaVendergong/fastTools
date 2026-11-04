@@ -62,6 +62,9 @@ function localProxy() {
 export default defineConfig({
   plugins: [vue(), localProxy()],
   server: {
+    // 固定端口，避免与其它项目的 5173 冲突导致打开错页面
+    port: 5200,
+    strictPort: false,
     proxy: {
       // 数据库网关（server/index.js），避免浏览器跨域
       '/api/db': 'http://127.0.0.1:3100',

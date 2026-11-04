@@ -531,16 +531,16 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: #fff;
+  background: var(--panel-bg);
   border: 1px solid var(--border);
   border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .select {
   padding: 5px 8px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--panel-bg);
   font-size: 12px;
   outline: none;
 }
@@ -589,7 +589,7 @@ onMounted(() => {
   white-space: nowrap;
 }
 .tx.on .tx-label {
-  color: #b25000;
+  color: var(--warn);
   font-weight: 500;
 }
 .tx-size {
@@ -603,7 +603,7 @@ onMounted(() => {
 .tx-count {
   font-family: 'SF Mono', Menlo, Consolas, monospace;
   font-size: 11px;
-  color: #b25000;
+  color: var(--warn);
   font-variant-numeric: tabular-nums;
 }
 .tx .link {
@@ -617,7 +617,7 @@ onMounted(() => {
   white-space: nowrap;
 }
 .status.err {
-  color: #d70015;
+  color: var(--danger);
 }
 .body {
   flex: 1;
@@ -638,9 +638,9 @@ onMounted(() => {
   flex-direction: column;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--panel-bg);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .panel-head {
   flex: none;
@@ -648,7 +648,7 @@ onMounted(() => {
   align-items: center;
   padding: 6px 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
 }
 .panel-title {
   font-size: 12px;
@@ -686,14 +686,14 @@ onMounted(() => {
   background: var(--hover);
 }
 .conn.active {
-  background: rgba(10, 132, 255, 0.1);
+  background: var(--accent-soft);
 }
 .type {
   flex: none;
   width: 22px;
   padding: 1px 0;
   border-radius: 3px;
-  background: rgba(0, 0, 0, 0.06);
+  background: var(--fill-2);
   font-size: 9px;
   text-align: center;
   color: var(--text-dim);
@@ -748,13 +748,13 @@ onMounted(() => {
   border: 1px solid var(--border);
   border-bottom: none;
   border-radius: 8px 8px 0 0;
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--panel-bg);
   font-size: 12px;
   color: var(--text-dim);
   white-space: nowrap;
 }
 .tab.on {
-  background: #fff;
+  background: var(--panel-bg);
   color: var(--text);
   box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.06);
 }
@@ -767,7 +767,7 @@ onMounted(() => {
 }
 .x:hover {
   opacity: 1;
-  color: #d70015;
+  color: var(--danger);
 }
 .tab-content {
   flex: 1;

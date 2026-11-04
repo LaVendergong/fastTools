@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 
 const FILTER_DEFAULTS = { brightness: 100, contrast: 100, saturate: 100, grayscale: 0, blur: 0 }
 const SCALES = [25, 50, 75, 100]
@@ -67,6 +67,9 @@ function loadFile(file) {
     }
     result.value = null
     reset()
+    undoStack.value = []
+    redoStack.value = []
+    pushSnapshot(0)
   }
   image.src = url
 }
@@ -80,12 +83,126 @@ function onDrop(e) {
   loadFile(e.dataTransfer?.files?.[0])
 }
 
+/* ---- 撤销 / 重做 ---- */
+const undoStack = ref([])
+const redoStack = ref([])
+let snapshotTimer = null
+
+function snapshotText() {
+  return JSON.stringify({
+    filters: { ...filters },
+    rotate: rotate.value,
+    flipH: flipH.value,
+    flipV: flipV.value,
+    scale: scale.value,
+  })
+}
+
+function applySnapshot(text) {
+  const data = JSON.parse(text)
+  Object.assign(filters, data.filters)
+  rotate.value = data.rotate
+  flipH.value = data.flipH
+  flipV.value = data.flipV
+  scale.value = data.scale
+  result.value = null
+}
+
+function pushSnapshot(delay = 320) {
+  clearTimeout(snapshotTimer)
+  snapshotTimer = setTimeout(() => {
+    const text = snapshotText()
+    if (undoStack.value[undoStack.value.length - 1] === text) return
+    undoStack.value.push(text)
+    if (undoStack.value.length > 60) undoStack.value.shift()
+    redoStack.value = []
+  }, delay)
+}
+
+function undo() {
+  if (undoStack.value.length < 2) return
+  redoStack.value.push(undoStack.value.pop())
+  applySnapshot(undoStack.value[undoStack.value.length - 1])
+}
+
+function redo() {
+  const next = redoStack.value.pop()
+  if (!next) return
+  undoStack.value.push(next)
+  applySnapshot(next)
+}
+
+watch(
+  () => [
+    filters.brightness,
+    filters.contrast,
+    filters.saturate,
+    filters.grayscale,
+    filters.blur,
+    rotate.value,
+    flipH.value,
+    flipV.value,
+    scale.value,
+  ],
+  () => pushSnapshot(),
+)
+
+/* ---- 裁剪 ---- */
+const cropMode = ref(false)
+const crop = reactive({ x: 0.1, y: 0.1, w: 0.8, h: 0.8 })
+const CROP_PRESETS = [
+  { label: '自由', w: 0.8, h: 0.8 },
+  { label: '1:1', w: 0.7, h: 0.7 },
+  { label: '4:3', w: 0.8, h: 0.6 },
+  { label: '16:9', w: 0.9, h: 0.506 },
+]
+
+function setPreset(p) {
+  crop.w = p.w
+  crop.h = p.h
+  crop.x = (1 - p.w) / 2
+  crop.y = (1 - p.h) / 2
+}
+
+function applyCrop() {
+  const img = imageEl.value
+  if (!img || !photo.value) return
+
+  const sx = Math.round(crop.x * img.naturalWidth)
+  const sy = Math.round(crop.y * img.naturalHeight)
+  const sw = Math.max(1, Math.round(crop.w * img.naturalWidth))
+  const sh = Math.max(1, Math.round(crop.h * img.naturalHeight))
+
+  const canvas = document.createElement('canvas')
+  canvas.width = sw
+  canvas.height = sh
+  canvas.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh)
+
+  const dataUrl = canvas.toDataURL('image/png')
+  const next = new Image()
+  next.onload = () => {
+    imageEl.value = next
+    photo.value = { ...photo.value, src: dataUrl, width: sw, height: sh }
+    cropMode.value = false
+    crop.x = 0.1
+    crop.y = 0.1
+    crop.w = 0.8
+    crop.h = 0.8
+    result.value = null
+    undoStack.value = []
+    redoStack.value = []
+    pushSnapshot(0)
+  }
+  next.src = dataUrl
+}
+
 function reset() {
   Object.assign(filters, FILTER_DEFAULTS)
   rotate.value = 0
   flipH.value = false
   flipV.value = false
   scale.value = 100
+  cropMode.value = false
   result.value = null
 }
 
@@ -166,6 +283,10 @@ async function copySize() {
         垂直翻转
       </button>
       <i class="vline" />
+      <button class="tbtn" :disabled="!photo || undoStack.length < 2" title="撤销" @click="undo">
+        撤销
+      </button>
+      <button class="tbtn" :disabled="!redoStack.length" title="重做" @click="redo">重做</button>
       <button class="tbtn" :disabled="!photo" @click="reset">重置</button>
       <span v-if="photo" class="meta">
         {{ photo.name }} · {{ photo.width }}×{{ photo.height }} · {{ formatSize(photo.size) }}
@@ -181,13 +302,26 @@ async function copySize() {
         @drop.prevent="onDrop"
         @click="!photo && fileInputEl?.click()"
       >
-        <img
-          v-if="photo"
-          :src="photo.src"
-          class="photo"
-          :style="{ filter: filterCss, transform: transformCss }"
-          alt="编辑预览"
-        />
+        <div v-if="photo" class="photo-wrap">
+          <img
+            :src="photo.src"
+            class="photo"
+            :style="{ filter: filterCss, transform: transformCss }"
+            alt="编辑预览"
+          />
+          <div
+            v-if="cropMode"
+            class="crop-mask"
+            :style="{
+              left: `${crop.x * 100}%`,
+              top: `${crop.y * 100}%`,
+              width: `${crop.w * 100}%`,
+              height: `${crop.h * 100}%`,
+            }"
+          >
+            <span class="crop-label">{{ Math.round(crop.w * 100) }}% × {{ Math.round(crop.h * 100) }}%</span>
+          </div>
+        </div>
         <div v-else class="placeholder">
           <div class="drop-icon">🖼️</div>
           <p class="drop-title">拖入图片或点击选择</p>
@@ -199,6 +333,46 @@ async function copySize() {
         <div class="panel">
           <div class="panel-head"><span class="panel-title">调整</span></div>
           <div class="pane">
+            <div class="crop-row">
+              <button
+                class="tbtn"
+                :class="{ on: cropMode }"
+                :disabled="!photo"
+                @click="cropMode = !cropMode"
+              >
+                {{ cropMode ? '退出裁剪' : '裁剪' }}
+              </button>
+              <template v-if="cropMode">
+                <button v-for="p in CROP_PRESETS" :key="p.label" class="chip" @click="setPreset(p)">
+                  {{ p.label }}
+                </button>
+                <button class="tbtn primary" @click="applyCrop">应用</button>
+              </template>
+            </div>
+
+            <div v-if="cropMode" class="crop-sliders">
+              <div class="ctrl">
+                <label>水平</label>
+                <input v-model.number="crop.x" type="range" min="0" max="0.9" step="0.01" />
+                <span class="val">{{ Math.round(crop.x * 100) }}%</span>
+              </div>
+              <div class="ctrl">
+                <label>垂直</label>
+                <input v-model.number="crop.y" type="range" min="0" max="0.9" step="0.01" />
+                <span class="val">{{ Math.round(crop.y * 100) }}%</span>
+              </div>
+              <div class="ctrl">
+                <label>宽度</label>
+                <input v-model.number="crop.w" type="range" min="0.05" max="1" step="0.01" />
+                <span class="val">{{ Math.round(crop.w * 100) }}%</span>
+              </div>
+              <div class="ctrl">
+                <label>高度</label>
+                <input v-model.number="crop.h" type="range" min="0.05" max="1" step="0.01" />
+                <span class="val">{{ Math.round(crop.h * 100) }}%</span>
+              </div>
+            </div>
+
             <div class="ctrl">
               <label>亮度</label>
               <input v-model.number="filters.brightness" type="range" min="0" max="200" />
@@ -300,10 +474,10 @@ async function copySize() {
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: #fff;
+  background: var(--panel-bg);
   border: 1px solid var(--border);
   border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .tbtn {
   padding: 4px 10px;
@@ -359,9 +533,57 @@ async function copySize() {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 .canvas-area.empty {
-  background: #f5f5f7;
+  background: var(--surface-2);
   border: 1.5px dashed rgba(0, 0, 0, 0.18);
   cursor: pointer;
+}
+.photo-wrap {
+  position: relative;
+  display: inline-flex;
+  max-width: 100%;
+  max-height: 100%;
+}
+.crop-mask {
+  position: absolute;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+.crop-label {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--fill-3);
+  color: #fff;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.crop-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--border);
+}
+.crop-row .tbtn.on {
+  border-color: transparent;
+  background: rgba(0, 122, 255, 0.14);
+  color: var(--accent);
+}
+.chip {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--fill-1);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.chip:hover {
+  background: rgba(0, 122, 255, 0.12);
+  color: var(--accent);
 }
 .photo {
   max-width: 100%;
@@ -398,15 +620,15 @@ async function copySize() {
   flex-direction: column;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--panel-bg);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .panel-head {
   flex: none;
   padding: 6px 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
 }
 .panel-title {
   font-size: 12px;
@@ -451,7 +673,7 @@ async function copySize() {
   padding: 4px 6px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--panel-bg);
   font-size: 12px;
   outline: none;
 }
@@ -461,7 +683,7 @@ async function copySize() {
   gap: 2px;
   padding: 2px;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--fill-1);
 }
 .segmented button {
   flex: 1;
@@ -471,7 +693,7 @@ async function copySize() {
   color: var(--text-dim);
 }
 .segmented button.on {
-  background: #fff;
+  background: var(--panel-bg);
   color: var(--text);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
@@ -486,7 +708,7 @@ async function copySize() {
   font-weight: 500;
 }
 .export:hover:not(:disabled) {
-  background: #0071e3;
+  background: var(--accent-strong);
 }
 .export:disabled {
   opacity: 0.45;
@@ -508,11 +730,11 @@ async function copySize() {
   font-family: 'SF Mono', Menlo, Consolas, monospace;
   font-size: 13px;
   font-weight: 600;
-  color: #1d7a34;
+  color: var(--success);
 }
 .saved {
   font-size: 11px;
-  color: #1d7a34;
+  color: var(--success);
 }
 .result-sub {
   margin: 3px 0 8px;
@@ -527,9 +749,9 @@ async function copySize() {
 .download {
   padding: 4px 10px;
   border-radius: 6px;
-  background: #fff;
+  background: var(--panel-bg);
   border: 1px solid rgba(29, 122, 52, 0.3);
-  color: #1d7a34;
+  color: var(--success);
   font-size: 11.5px;
   text-decoration: none;
 }

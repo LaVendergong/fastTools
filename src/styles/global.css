@@ -1,14 +1,125 @@
+/*
+ * 设计令牌（Design Tokens）
+ * 命名参考 Tailwind 的语义化分层：
+ *   surface-0..4  由深到浅的表面层级（桌面 → 窗口 → 侧栏 → 面板 → 悬浮）
+ *   fill-1..3     叠加填充（hover / tag / 输入框底），浅色为黑、深色为白
+ *   text / dim / faint   三级文字
+ *   accent / accent-soft 强调色与强调底色
+ * 组件只使用变量，深色模式通过覆盖变量实现，不再写死颜色。
+ */
 :root {
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', 'PingFang SC',
     'Microsoft YaHei', sans-serif;
+
+  /* 表面层级 */
+  --surface-0: #4c5bd4;
+  --surface-1: #ffffff;
+  --surface-2: #f4f4f6;
+  --surface-3: #ffffff;
+  --surface-4: #fafafa;
+  --panel-bg: #ffffff;
   --panel: rgba(248, 248, 248, 0.72);
   --panel-solid: #f6f6f6;
+  --sidebar-bg: rgba(246, 246, 248, 0.66);
+  --window-bg: rgba(255, 255, 255, 0.95);
+  --toolbar-bg: rgba(255, 255, 255, 0.72);
+  --input-bg: rgba(0, 0, 0, 0.04);
+  --code-bg: rgba(0, 0, 0, 0.035);
+  --dock-bg: rgba(255, 255, 255, 0.26);
+  --dock-btn-bg: rgba(255, 255, 255, 0.42);
+  --menubar-bg: rgba(0, 0, 0, 0.22);
+
+  /* 描边 */
   --border: rgba(0, 0, 0, 0.09);
+  --border-strong: rgba(0, 0, 0, 0.15);
+
+  /* 文字 */
   --text: #1d1d1f;
   --text-dim: #86868b;
+  --text-faint: #aeaeb2;
+
+  /* 强调色 */
   --accent: #007aff;
+  --accent-strong: #0071e3;
+  --accent-soft: rgba(0, 122, 255, 0.12);
+
+  /* 状态色（成功 / 警告 / 危险），含底色 */
+  --success: #1d7a34;
+  --success-soft: rgba(52, 199, 89, 0.16);
+  --warn: #b25000;
+  --warn-soft: rgba(255, 149, 0, 0.16);
+  --danger: #d70015;
+  --danger-soft: rgba(255, 59, 48, 0.14);
+
+  /* 填充层 */
+  --fill-1: rgba(0, 0, 0, 0.04);
+  --fill-2: rgba(0, 0, 0, 0.07);
+  --fill-3: rgba(0, 0, 0, 0.11);
   --hover: rgba(0, 0, 0, 0.06);
+
+  /* 阴影 */
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-2: 0 12px 32px rgba(0, 0, 0, 0.18);
+  --window-shadow: 0 30px 70px rgba(20, 15, 60, 0.35);
+
+  /* 图标：浅色下是柔和投影，深色下压暗并加深投影 */
+  --icon-filter: none;
+  --icon-inset: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  --icon-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
+
   --radius: 11px;
+}
+
+html.dark {
+  /* 表面层级：窗口 > 侧栏 > 面板，形成清晰层次 */
+  --surface-0: #0c0c0f;
+  --surface-1: #1a1a1e;
+  --surface-2: #131316;
+  --surface-3: #202024;
+  --surface-4: #26262b;
+  --panel-bg: #202024;
+  --panel: rgba(32, 32, 36, 0.82);
+  --panel-solid: #202024;
+  --sidebar-bg: rgba(18, 18, 21, 0.86);
+  --window-bg: rgba(26, 26, 30, 0.97);
+  --toolbar-bg: rgba(26, 26, 30, 0.82);
+  --input-bg: rgba(255, 255, 255, 0.06);
+  --code-bg: rgba(255, 255, 255, 0.05);
+  --dock-bg: rgba(32, 32, 38, 0.5);
+  --dock-btn-bg: rgba(255, 255, 255, 0.14);
+  --menubar-bg: rgba(10, 10, 14, 0.6);
+
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.15);
+
+  --text: #ececee;
+  --text-dim: #a1a1aa;
+  --text-faint: #73737c;
+
+  --accent: #3d8bfd;
+  --accent-strong: #2f7ae8;
+  --accent-soft: rgba(61, 139, 253, 0.2);
+
+  /* 深色下状态色提亮，保证在深底上可读 */
+  --success: #4ade80;
+  --success-soft: rgba(74, 222, 128, 0.16);
+  --warn: #fbbf24;
+  --warn-soft: rgba(251, 191, 36, 0.16);
+  --danger: #ff6b6b;
+  --danger-soft: rgba(255, 107, 107, 0.16);
+
+  --fill-1: rgba(255, 255, 255, 0.055);
+  --fill-2: rgba(255, 255, 255, 0.09);
+  --fill-3: rgba(255, 255, 255, 0.13);
+  --hover: rgba(255, 255, 255, 0.07);
+
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.45);
+  --shadow-2: 0 12px 32px rgba(0, 0, 0, 0.55);
+  --window-shadow: 0 32px 80px rgba(0, 0, 0, 0.6);
+
+  --icon-filter: saturate(0.85) brightness(0.8);
+  --icon-inset: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  --icon-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
 }
 
 * {
@@ -31,6 +142,14 @@ body {
   background: radial-gradient(120% 90% at 15% 10%, #6f8ffb 0%, rgba(111, 143, 251, 0) 55%),
     radial-gradient(110% 80% at 85% 20%, #b06ef5 0%, rgba(176, 110, 245, 0) 50%),
     radial-gradient(120% 100% at 60% 100%, #f7a8d8 0%, rgba(247, 168, 216, 0) 60%), #4c5bd4;
+  transition: background 0.3s ease, color 0.2s ease;
+}
+
+/* 深色桌面：低饱和冷调渐变，避免白斑刺眼 */
+html.dark body {
+  background: radial-gradient(110% 80% at 18% 8%, #232a44 0%, rgba(35, 42, 68, 0) 55%),
+    radial-gradient(100% 70% at 82% 16%, #2c2440 0%, rgba(44, 36, 64, 0) 52%),
+    radial-gradient(120% 90% at 55% 100%, #33263a 0%, rgba(51, 38, 58, 0) 58%), #0d0e14;
 }
 
 button {
@@ -43,8 +162,35 @@ button {
   cursor: pointer;
 }
 
-input {
+input,
+textarea,
+select {
   font-family: inherit;
   font-size: inherit;
   color: inherit;
+}
+
+/* 深色下统一输入控件外观 */
+html.dark input,
+html.dark textarea,
+html.dark select {
+  color-scheme: dark;
+}
+
+/* 滚动条 */
+html.dark ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+html.dark ::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 8px;
+  background-clip: content-box;
+  background-color: rgba(255, 255, 255, 0.2);
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+html.dark ::-webkit-scrollbar-track {
+  background: transparent;
 }

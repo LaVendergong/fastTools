@@ -145,10 +145,10 @@ async function copyOutput() {
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
-  background: #fff;
+  background: var(--panel-bg);
   border: 1px solid var(--border);
   border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .badge {
   flex: none;
@@ -159,15 +159,15 @@ async function copyOutput() {
 }
 .badge.ok {
   background: rgba(52, 199, 89, 0.12);
-  color: #1d7a34;
+  color: var(--success);
 }
 .badge.idle {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--fill-1);
   color: var(--text-dim);
 }
 .badge.err {
   background: rgba(255, 59, 48, 0.1);
-  color: #d70015;
+  color: var(--danger);
 }
 .stats {
   font-size: 12px;
@@ -187,7 +187,7 @@ async function copyOutput() {
   gap: 2px;
   padding: 2px;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--fill-1);
 }
 .segmented button {
   padding: 3px 10px;
@@ -196,7 +196,7 @@ async function copyOutput() {
   color: var(--text-dim);
 }
 .segmented button.on {
-  background: #fff;
+  background: var(--panel-bg);
   color: var(--text);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
@@ -216,13 +216,13 @@ async function copyOutput() {
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--panel-bg);
   outline: none;
   resize: none;
   font-family: 'SF Mono', Menlo, Consolas, monospace;
   font-size: 12.5px;
   line-height: 1.6;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .in:focus {
   border-color: var(--accent);
@@ -234,9 +234,9 @@ async function copyOutput() {
   flex-direction: column;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--panel-bg);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .panel-head {
   display: flex;
@@ -244,7 +244,7 @@ async function copyOutput() {
   gap: 8px;
   padding: 6px 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
   flex: none;
 }
 .panel-title {
@@ -265,10 +265,10 @@ async function copyOutput() {
   font-size: 12.5px;
   line-height: 1.6;
   white-space: pre;
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
 }
 .out.error {
-  color: #d70015;
+  color: var(--danger);
 }
 .out.placeholder {
   color: var(--text-dim);

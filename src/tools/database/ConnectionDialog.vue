@@ -222,7 +222,7 @@ function save() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.28);
+  background: var(--fill-3);
 }
 .dialog {
   width: 420px;
@@ -230,7 +230,7 @@ function save() {
   display: flex;
   flex-direction: column;
   border-radius: 12px;
-  background: #fff;
+  background: var(--panel-bg);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
   overflow: hidden;
 }
@@ -240,7 +240,7 @@ header {
   align-items: center;
   padding: 10px 14px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
   font-size: 13px;
   font-weight: 600;
 }
@@ -273,7 +273,7 @@ header {
   padding: 5px 9px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--panel-bg);
   outline: none;
   font-size: 12.5px;
 }
@@ -323,10 +323,10 @@ header {
   color: var(--text-dim);
 }
 .test-msg.ok {
-  color: #1d7a34;
+  color: var(--success);
 }
 .test-msg.bad {
-  color: #d70015;
+  color: var(--danger);
 }
 footer {
   flex: none;
@@ -356,7 +356,7 @@ footer {
   color: #fff;
 }
 .tbtn.primary:hover {
-  background: #0071e3;
+  background: var(--accent-strong);
 }
 .tbtn:disabled {
   opacity: 0.5;

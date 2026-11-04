@@ -542,9 +542,9 @@ watch(
   flex-direction: column;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--panel-bg);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .tabs-bar {
   flex: none;
@@ -553,7 +553,7 @@ watch(
   gap: 8px;
   padding: 6px 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
 }
 .tabs-bar > button {
   padding: 2px 10px;
@@ -562,7 +562,7 @@ watch(
   color: var(--text-dim);
 }
 .tabs-bar > button.on {
-  background: #fff;
+  background: var(--panel-bg);
   color: var(--text);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
@@ -581,7 +581,7 @@ watch(
 }
 .op {
   font-size: 11px;
-  color: #1d7a34;
+  color: var(--success);
 }
 .actions {
   margin-left: auto;
@@ -618,7 +618,7 @@ watch(
   padding: 4px 6px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--panel-bg);
   font-size: 11.5px;
 }
 .pager {
@@ -705,7 +705,7 @@ watch(
   color: var(--accent);
 }
 .mini-link.danger {
-  color: #d70015;
+  color: var(--danger);
 }
 th.act,
 td.act {
@@ -746,11 +746,11 @@ td.act {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: #fafafa;
+  background: var(--surface-4);
   font-weight: 600;
 }
 .grid th.pk {
-  color: #b25000;
+  color: var(--warn);
 }
 .grid th.sortable {
   cursor: pointer;
@@ -771,7 +771,7 @@ td.act {
 .grid .rn {
   color: var(--text-dim);
   text-align: right;
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
 }
 .grid td.null {
   color: var(--text-dim);
@@ -783,16 +783,16 @@ td.act {
   position: sticky;
   right: 0;
   z-index: 2;
-  background: #fff;
+  background: var(--panel-bg);
   box-shadow: -6px 0 8px rgba(0, 0, 0, 0.04);
 }
 .grid th.op-col {
   z-index: 3;
-  background: #fafafa;
+  background: var(--surface-4);
 }
 .grid td.editing {
   padding: 2px 4px;
-  background: #fff;
+  background: var(--panel-bg);
 }
 .cell-input {
   width: 100%;
@@ -817,7 +817,7 @@ td.act {
   opacity: 1;
 }
 .row-del:hover {
-  color: #d70015;
+  color: var(--danger);
 }
 .empty {
   padding: 40px;
@@ -826,7 +826,7 @@ td.act {
   color: var(--text-dim);
 }
 .err-text {
-  color: #d70015;
+  color: var(--danger);
   font-family: 'SF Mono', Menlo, Consolas, monospace;
   font-size: 12px;
 }
@@ -835,7 +835,7 @@ td.act {
   margin: 0;
   padding: 6px 10px;
   background: rgba(255, 59, 48, 0.06);
-  color: #d70015;
+  color: var(--danger);
   font-size: 11.5px;
 }
 .hint-bar {
@@ -878,14 +878,14 @@ h4 {
   text-align: left;
 }
 .meta-grid th {
-  background: rgba(0, 0, 0, 0.02);
+  background: var(--fill-1);
   font-weight: 600;
 }
 .ddl {
   margin: 0;
   padding: 10px 12px;
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.03);
+  background: var(--fill-1);
   font-family: 'SF Mono', Menlo, Consolas, monospace;
   font-size: 11.5px;
   line-height: 1.7;

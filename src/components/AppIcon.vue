@@ -14,8 +14,7 @@ const props = defineProps({
       height: props.size + 'px',
       fontSize: props.size * (props.glyph.length > 2 ? 0.4 : 0.44) + 'px',
       borderRadius: props.size * 0.24 + 'px',
-      background: `linear-gradient(180deg, hsl(${props.hue} 85% 68%), hsl(${props.hue + 25} 72% 50%))`,
-      boxShadow: `0 ${props.size * 0.04}px ${props.size * 0.12}px hsl(${props.hue} 60% 40% / 0.35)`,
+      background: `linear-gradient(180deg, hsl(${props.hue} 86% 66%), hsl(${props.hue + 22} 74% 48%))`,
     }"
     >{{ props.glyph }}</span
   >
@@ -29,8 +28,12 @@ const props = defineProps({
   color: #fff;
   font-weight: 600;
   line-height: 1;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
   flex: none;
   user-select: none;
+  /* 顶部高光 + 柔和投影，浅/深色各有一套变量 */
+  box-shadow: var(--icon-inset), var(--icon-shadow);
+  filter: var(--icon-filter);
+  transition: filter 0.2s ease, box-shadow 0.2s ease;
 }
 </style>

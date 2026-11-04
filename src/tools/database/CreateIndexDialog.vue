@@ -135,7 +135,7 @@ async function submit() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.28);
+  background: var(--fill-3);
 }
 .dialog {
   width: 560px;
@@ -144,7 +144,7 @@ async function submit() {
   display: flex;
   flex-direction: column;
   border-radius: 12px;
-  background: #fff;
+  background: var(--panel-bg);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
   overflow: hidden;
 }
@@ -154,7 +154,7 @@ header {
   align-items: center;
   padding: 10px 14px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
   font-size: 13px;
   font-weight: 600;
 }
@@ -237,7 +237,7 @@ header {
 .err {
   margin: 8px 0 0;
   font-size: 12px;
-  color: #d70015;
+  color: var(--danger);
 }
 .preview {
   margin-top: 12px;
@@ -248,7 +248,7 @@ header {
 .preview-head {
   padding: 5px 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
   font-size: 11px;
   color: var(--text-dim);
 }
@@ -284,7 +284,7 @@ footer {
   color: #fff;
 }
 .tbtn.primary:hover:not(:disabled) {
-  background: #0071e3;
+  background: var(--accent-strong);
 }
 .tbtn:disabled {
   opacity: 0.45;

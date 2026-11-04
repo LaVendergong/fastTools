@@ -166,15 +166,15 @@ const added = computed(() => {
   padding: 12px;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: #f9f9fb;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  background: var(--surface-3);
+  box-shadow: var(--shadow-1);
 }
 .tabs {
   display: flex;
   gap: 2px;
   padding: 2px;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--fill-1);
 }
 .tabs button {
   flex: 1;
@@ -184,7 +184,7 @@ const added = computed(() => {
   color: var(--text-dim);
 }
 .tabs button.on {
-  background: #fff;
+  background: var(--panel-bg);
   color: var(--text);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
@@ -210,7 +210,7 @@ const added = computed(() => {
   padding: 5px 8px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--panel-bg);
   outline: none;
   font-size: 12.5px;
 }
@@ -234,7 +234,7 @@ const added = computed(() => {
   margin-top: 4px;
   padding: 12px;
   border-radius: 8px;
-  background: #fff;
+  background: var(--panel-bg);
   border: 1px solid rgba(0, 0, 0, 0.06);
 }
 .big {
@@ -271,7 +271,7 @@ const added = computed(() => {
   gap: 2px;
   padding: 7px 10px;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.025);
+  background: var(--fill-1);
 }
 .k {
   font-size: 10.5px;

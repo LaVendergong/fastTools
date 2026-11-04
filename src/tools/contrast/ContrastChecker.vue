@@ -125,10 +125,10 @@ function swap() {
   align-items: center;
   gap: 18px;
   padding: 8px 12px;
-  background: #fff;
+  background: var(--panel-bg);
   border: 1px solid var(--border);
   border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .field {
   display: flex;
@@ -145,7 +145,7 @@ function swap() {
   padding: 2px;
   border: 1px solid var(--border);
   border-radius: 5px;
-  background: #fff;
+  background: var(--panel-bg);
   cursor: pointer;
 }
 code {
@@ -178,7 +178,7 @@ code {
   padding: 28px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
   transition: background 0.15s ease, color 0.15s ease;
 }
 .preview h2 {
@@ -206,8 +206,8 @@ code {
   padding: 14px 16px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  background: var(--panel-bg);
+  box-shadow: var(--shadow-1);
 }
 .score {
   font-size: 34px;
@@ -231,8 +231,8 @@ code {
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  background: var(--panel-bg);
+  box-shadow: var(--shadow-1);
 }
 .grade {
   display: flex;
@@ -259,10 +259,10 @@ code {
   border-radius: 999px;
   font-size: 11px;
   background: rgba(255, 59, 48, 0.1);
-  color: #d70015;
+  color: var(--danger);
 }
 .grade.pass .result {
   background: rgba(52, 199, 89, 0.12);
-  color: #1d7a34;
+  color: var(--success);
 }
 </style>

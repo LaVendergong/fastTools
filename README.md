@@ -1,6 +1,8 @@
 # 工具箱 · 前端实用小工具
 
-参考 macOS 桌面风格的前端小工具集合（Vue 3 + Vite），共 16 个工具：正则测试、JSON 格式化、Markdown 编辑、Base64、Unicode、时间戳、颜色转换、渐变、阴影、对比度、HTTP 请求、数据库、UUID、二维码、图片编辑、计算器。
+参考 macOS 桌面风格的前端小工具集合（Vue 3 + Vite），共 38 个工具：正则测试、JSON 格式化、Markdown 笔记、Base64、Unicode、时间戳、HTML 实体、调色盘、渐变、阴影、对比度、HTTP 请求、HTTP 速查、数据库、UUID、二维码、图片编辑、计算器、函数绘图、货币汇率、音乐播放器、文件管理器、网址导航、文本编辑器、JWT 解析、格式转换、哈希计算、Cron 生成、批量重命名、文本批处理、JSON 取值、SQL 格式化、密码生成、世界时钟、图片加水印、二维码识别、AES 加解密、设备信息。
+
+计算器的转换器包含长度、重量、面积、体积、温度、速度、存储七类单位换算。
 
 计算器内置 7 种模式（对齐 Windows 计算器）：标准、科学、程序员、日期计算，以及货币 / 体积 / 长度转换器。
 
@@ -13,6 +15,23 @@ npm install
 npm run dev      # 前端开发服务器
 npm run build    # 构建
 ```
+
+## 安装为应用（关联 .txt 打开方式）
+
+项目内置了 PWA 清单（`public/manifest.webmanifest`）和最小 Service Worker（`public/sw.js`），声明了对 `.txt / .md / .json / .log / .csv / .html / .css / .js / .xml / .yml / .sql` 等文本类型的文件关联。
+
+步骤：
+
+1. 部署到 **HTTPS** 域名（`localhost` 也算安全上下文）：`npm run build` 后把 `dist/` 发布出去
+2. 用 Chrome / Edge 打开该地址，点地址栏右侧的「安装」图标（或菜单 → 应用 → 安装此站点）
+3. 到系统「设置 → 应用 → 默认应用」把 `.txt` 的默认打开方式改成「工具箱」
+4. 之后双击 .txt 会直接进入文本编辑器，`Ctrl / ⌘ + S` 即可写回原文件
+
+说明：
+
+- 开发模式（`npm run dev`）不注册 Service Worker，避免热更新拿到旧缓存；只有生产构建才会注册
+- 如果部署在子路径（如 GitHub Pages 的 `/fastTools/`），需要在 `vite.config.js` 设置 `base: '/fastTools/'`，`index.html` 里的 manifest 与图标路径已用 `%BASE_URL%` 自动适配
+- 应用内也有一层关联：文件管理器里双击任何文本文件，直接用文本编辑器打开并支持保存回原文件
 
 ## 数据库工具（可选，需单独安装）
 
@@ -66,6 +85,32 @@ src/
    ├─ json/JsonFormatter.vue
    └─ …                    # 一个工具一个目录
 ```
+
+## 深色模式与设计令牌
+
+所有颜色都走 CSS 变量（定义在 `src/styles/global.css`），深色模式只覆盖变量、组件里不写死颜色。命名参考 Tailwind 的语义化分层：
+
+| 令牌 | 用途 | 浅色 | 深色 |
+|---|---|---|---|
+| `--surface-1` | 窗口主体 | `#fff` | `#1a1a1e` |
+| `--surface-2` | 侧边栏 | `#f4f4f6` | `#131316` |
+| `--surface-3` | 面板 / 卡片 | `#fff` | `#202024` |
+| `--surface-4` | 表头 / 次级区域 | `#fafafa` | `#26262b` |
+| `--panel-bg` | 工具内卡片底 | `#fff` | `#202024` |
+| `--fill-1 / -2 / -3` | 叠加填充（hover、标签、输入框） | 黑 4% / 7% / 11% | 白 5.5% / 9% / 13% |
+| `--border` / `--border-strong` | 描边 | 黑 9% / 15% | 白 8% / 15% |
+| `--text` / `--text-dim` / `--text-faint` | 三级文字 | `#1d1d1f` / `#86868b` / `#aeaeb2` | `#ececee` / `#a1a1aa` / `#73737c` |
+| `--accent` / `--accent-strong` / `--accent-soft` | 强调色、悬停、选中底 | 蓝 | 提亮蓝 |
+| `--success` / `--warn` / `--danger`（各带 `-soft` 底色） | 状态提示 | 深绿 / 棕 / 红 | 亮绿 / 琥珀 / 珊瑚 |
+| `--shadow-1` / `--shadow-2` | 阴影层级 | 轻 | 重 |
+| `--icon-filter` / `--icon-inset` / `--icon-shadow` | 应用图标 | 无滤镜 | 压暗 + 深投影 |
+
+约定：
+
+- 新组件只使用变量，禁止直接写 `#fff`、`rgba(0, 0, 0, 0.05)` 这类固定值
+- 需要「再亮/再暗一层」时用 `--fill-1 → 2 → 3` 递进，不要新造透明度
+- 状态提示统一走 success / warn / danger 三组，深色下会自动提亮
+- 图标颜色由 `hue` 生成，深色模式通过 `--icon-filter` 统一压暗，不需要逐个改色
 
 ## 如何添加自己的工具
 

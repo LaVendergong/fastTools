@@ -2,7 +2,10 @@ import { markRaw } from 'vue'
 import PlaceholderTool from '../layout/ToolView.vue'
 import RegexTester from './regex/RegexTester.vue'
 import JsonFormatter from './json/JsonFormatter.vue'
-import MarkdownEditor from './markdown/MarkdownEditor.vue'
+import MarkdownNotes from './markdown/MarkdownNotes.vue'
+import SysInfoTool from './sysinfo/SysInfoTool.vue'
+import HttpReference from './http-ref/HttpReference.vue'
+import HtmlEntityTool from './html-entity/HtmlEntityTool.vue'
 import Base64Tool from './base64/Base64Tool.vue'
 import HttpClient from './http/HttpClient.vue'
 import UnicodeTool from './unicode/UnicodeTool.vue'
@@ -18,6 +21,23 @@ import DbClient from './database/DbClient.vue'
 import CalculatorTool from './calculator/CalculatorTool.vue'
 import GraphingTool from './graphing/GraphingTool.vue'
 import CurrencyTool from './currency/CurrencyTool.vue'
+import MusicPlayer from './music/MusicPlayer.vue'
+import FileManager from './files/FileManager.vue'
+import UrlNavigator from './nav/UrlNavigator.vue'
+import TextEditor from './editor/TextEditor.vue'
+import JwtDecoder from './jwt/JwtDecoder.vue'
+import DataConverter from './convert/DataConverter.vue'
+import HashTool from './hash/HashTool.vue'
+import CronBuilder from './cron/CronBuilder.vue'
+import BatchRename from './rename/BatchRename.vue'
+import TextBatchTool from './text-batch/TextBatchTool.vue'
+import JsonQueryTool from './json-query/JsonQueryTool.vue'
+import SqlFormatter from './sql-format/SqlFormatter.vue'
+import PasswordTool from './password/PasswordTool.vue'
+import WorldClock from './worldclock/WorldClock.vue'
+import WatermarkTool from './watermark/WatermarkTool.vue'
+import QrDecoder from './qr-decode/QrDecoder.vue'
+import AesTool from './crypto/AesTool.vue'
 
 /**
  * 工具注册表：新增工具只需往 tools 里加一项。
@@ -35,6 +55,9 @@ export const categories = [
   { id: 'encode', name: '编码转换', glyph: '🔁', hue: 275 },
   { id: 'color', name: '颜色设计', glyph: '🎨', hue: 330 },
   { id: 'dev', name: '开发工具', glyph: '🛠️', hue: 155 },
+  { id: 'media', name: '多媒体', glyph: '🎵', hue: 285 },
+  { id: 'system', name: '系统', glyph: '🗂️', hue: 200 },
+  { id: 'daily', name: '日常', glyph: '🧭', hue: 265 },
 ]
 
 const rawTools = [
@@ -58,12 +81,12 @@ const rawTools = [
   },
   {
     id: 'markdown',
-    name: 'Markdown 编辑',
-    desc: '在线编辑并实时预览 Markdown',
+    name: 'Markdown 笔记',
+    desc: '多篇笔记、语法高亮与实时预览',
     glyph: 'M',
     hue: 235,
     category: 'text',
-    component: MarkdownEditor,
+    component: MarkdownNotes,
   },
 
   {
@@ -97,9 +120,9 @@ const rawTools = [
 
   {
     id: 'color-convert',
-    name: '颜色转换器',
-    desc: 'HEX / RGB / HSL 互转',
-    glyph: '◐',
+    name: '调色盘',
+    desc: '屏幕取色、色值互转与色板管理',
+    glyph: '🎨',
     hue: 335,
     category: 'color',
     component: ColorConverter,
@@ -203,6 +226,186 @@ const rawTools = [
     hue: 250,
     category: 'dev',
     component: DbClient,
+  },
+  {
+    id: 'music',
+    name: '音乐播放器',
+    desc: '歌单、收藏、频谱可视化',
+    glyph: '🎵',
+    hue: 285,
+    category: 'media',
+    component: MusicPlayer,
+  },
+  {
+    id: 'files',
+    name: '文件管理器',
+    desc: '本站私有存储，可挂载本地目录',
+    glyph: '🗂️',
+    hue: 200,
+    category: 'system',
+    component: FileManager,
+  },
+  {
+    id: 'nav',
+    name: '网址导航',
+    desc: '常用网站速查，可自建站点',
+    glyph: '🧭',
+    hue: 265,
+    category: 'daily',
+    component: UrlNavigator,
+  },
+  {
+    id: 'editor',
+    name: '文本编辑器',
+    desc: '语法高亮、查找替换，可读写本地文件',
+    glyph: '✏️',
+    hue: 215,
+    category: 'text',
+    component: TextEditor,
+  },
+  {
+    id: 'jwt',
+    name: 'JWT 解析',
+    desc: '解码 Header/Payload，校验过期与签名',
+    glyph: '🔑',
+    hue: 45,
+    category: 'dev',
+    component: JwtDecoder,
+  },
+  {
+    id: 'convert',
+    name: '格式转换',
+    desc: 'JSON / YAML / XML / CSV 互转',
+    glyph: '⇄',
+    hue: 175,
+    category: 'dev',
+    component: DataConverter,
+  },
+  {
+    id: 'hash',
+    name: '哈希计算',
+    desc: 'MD5 / SHA 文本与文件摘要',
+    glyph: '#️⃣',
+    hue: 350,
+    category: 'dev',
+    component: HashTool,
+  },
+  {
+    id: 'cron',
+    name: 'Cron 生成',
+    desc: '可视化生成 Cron 表达式并预览执行时间',
+    glyph: '⏱',
+    hue: 25,
+    category: 'dev',
+    component: CronBuilder,
+  },
+  {
+    id: 'rename',
+    name: '批量重命名',
+    desc: '正则替换、序号、大小写批量改文件名',
+    glyph: '🏷️',
+    hue: 210,
+    category: 'system',
+    component: BatchRename,
+  },
+  {
+    id: 'text-batch',
+    name: '文本批处理',
+    desc: '去重排序、大小写、加行号、正则提取',
+    glyph: '¶',
+    hue: 265,
+    category: 'text',
+    component: TextBatchTool,
+  },
+  {
+    id: 'json-query',
+    name: 'JSON 取值',
+    desc: '路径表达式提取字段，可选树节点',
+    glyph: '⌗',
+    hue: 220,
+    category: 'dev',
+    component: JsonQueryTool,
+  },
+  {
+    id: 'sql-format',
+    name: 'SQL 格式化',
+    desc: '关键字大写、缩进与子句换行',
+    glyph: '⌘',
+    hue: 240,
+    category: 'dev',
+    component: SqlFormatter,
+  },
+  {
+    id: 'password',
+    name: '密码生成',
+    desc: '随机强密码、批量生成与强度检测',
+    glyph: '🔐',
+    hue: 15,
+    category: 'daily',
+    component: PasswordTool,
+  },
+  {
+    id: 'worldclock',
+    name: '世界时钟',
+    desc: '多城市时间对照与时区换算',
+    glyph: '🌐',
+    hue: 195,
+    category: 'daily',
+    component: WorldClock,
+  },
+  {
+    id: 'watermark',
+    name: '图片加水印',
+    desc: '文字水印、平铺与批量导出',
+    glyph: '💧',
+    hue: 320,
+    category: 'media',
+    component: WatermarkTool,
+  },
+  {
+    id: 'qr-decode',
+    name: '二维码识别',
+    desc: '从图片或摄像头读取二维码内容',
+    glyph: '🔍',
+    hue: 165,
+    category: 'dev',
+    component: QrDecoder,
+  },
+  {
+    id: 'aes',
+    name: 'AES 加解密',
+    desc: '口令加密文本，AES-256-GCM',
+    glyph: '🔒',
+    hue: 230,
+    category: 'dev',
+    component: AesTool,
+  },
+  {
+    id: 'sysinfo',
+    name: '设备信息',
+    desc: '浏览器、屏幕、网络与能力检测',
+    glyph: '🖥️',
+    hue: 210,
+    category: 'system',
+    component: SysInfoTool,
+  },
+  {
+    id: 'http-ref',
+    name: 'HTTP 速查',
+    desc: '状态码、方法、MIME 与常用请求头',
+    glyph: '📖',
+    hue: 150,
+    category: 'dev',
+    component: HttpReference,
+  },
+  {
+    id: 'entity',
+    name: 'HTML 实体',
+    desc: '实体编解码与常用字符表',
+    glyph: '&',
+    hue: 30,
+    category: 'encode',
+    component: HtmlEntityTool,
   },
 ]
 

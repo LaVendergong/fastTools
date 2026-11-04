@@ -296,8 +296,8 @@ function onKey(key) {
   padding: 12px;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: #f9f9fb;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  background: var(--surface-3);
+  box-shadow: var(--shadow-1);
 }
 .topbar {
   display: flex;
@@ -307,7 +307,7 @@ function onKey(key) {
   gap: 2px;
   padding: 2px;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--fill-1);
 }
 .segmented button {
   padding: 3px 10px;
@@ -316,7 +316,7 @@ function onKey(key) {
   color: var(--text-dim);
 }
 .segmented button.on {
-  background: #fff;
+  background: var(--panel-bg);
   color: var(--text);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
@@ -327,7 +327,7 @@ function onKey(key) {
   gap: 2px;
   padding: 6px;
   border-radius: 8px;
-  background: #fff;
+  background: var(--panel-bg);
   border: 1px solid rgba(0, 0, 0, 0.06);
 }
 .base-row {
@@ -342,7 +342,7 @@ function onKey(key) {
   background: var(--hover);
 }
 .base-row.on {
-  background: rgba(10, 132, 255, 0.1);
+  background: var(--accent-soft);
 }
 .base-label {
   flex: none;
@@ -388,7 +388,7 @@ function onKey(key) {
 .error {
   margin: 0;
   font-size: 12px;
-  color: #d70015;
+  color: var(--danger);
   text-align: right;
 }
 .keys {
@@ -400,11 +400,11 @@ function onKey(key) {
   gap: 6px;
 }
 .hex {
-  background: #fff;
+  background: var(--panel-bg);
   border: 1px solid rgba(0, 0, 0, 0.07);
   font-family: 'SF Mono', Menlo, Consolas, monospace;
   font-weight: 600;
-  color: #b25000;
+  color: var(--warn);
 }
 .hex:hover {
   background: #fdf6ef;
@@ -419,16 +419,16 @@ function onKey(key) {
   transform: scale(0.97);
 }
 .num {
-  background: #fff;
+  background: var(--panel-bg);
   border: 1px solid rgba(0, 0, 0, 0.07);
   font-size: 15px;
 }
 .num:hover {
-  background: #f2f2f5;
+  background: var(--surface-3);
 }
 .fn,
 .op {
-  background: #f0f0f3;
+  background: var(--surface-3);
   border: 1px solid transparent;
   font-size: 12px;
 }
@@ -442,6 +442,6 @@ function onKey(key) {
   font-size: 16px;
 }
 .eq:hover {
-  background: #0071e3;
+  background: var(--accent-strong);
 }
 </style>

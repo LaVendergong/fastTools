@@ -176,17 +176,17 @@ async function copyOutput() {
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
-  background: #fff;
+  background: var(--panel-bg);
   border: 1px solid var(--border);
   border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .segmented {
   display: flex;
   gap: 2px;
   padding: 2px;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--fill-1);
   flex: none;
 }
 .segmented button {
@@ -196,7 +196,7 @@ async function copyOutput() {
   color: var(--text-dim);
 }
 .segmented button.on {
-  background: #fff;
+  background: var(--panel-bg);
   color: var(--text);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
@@ -247,13 +247,13 @@ async function copyOutput() {
   padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--panel-bg);
   outline: none;
   resize: none;
   font-family: 'SF Mono', Menlo, Consolas, monospace;
   font-size: 13px;
   line-height: 1.7;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .in:focus {
   border-color: var(--accent);
@@ -265,9 +265,9 @@ async function copyOutput() {
   flex-direction: column;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--panel-bg);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .panel-head {
   display: flex;
@@ -275,7 +275,7 @@ async function copyOutput() {
   gap: 8px;
   padding: 6px 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
   flex: none;
 }
 .panel-title {
@@ -300,7 +300,7 @@ async function copyOutput() {
   line-height: 1.7;
   white-space: pre-wrap;
   word-break: break-all;
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
 }
 .out.placeholder {
   color: var(--text-dim);

@@ -54,7 +54,7 @@ header p {
   gap: 6px;
   border: 1.5px dashed rgba(0, 0, 0, 0.15);
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
 }
 .hint {
   margin: 0;

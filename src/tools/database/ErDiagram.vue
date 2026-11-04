@@ -210,9 +210,9 @@ onBeforeUnmount(endDrag)
   flex-direction: column;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--panel-bg);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .bar {
   flex: none;
@@ -221,7 +221,7 @@ onBeforeUnmount(endDrag)
   gap: 10px;
   padding: 6px 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
 }
 .title {
   font-size: 12px;
@@ -260,7 +260,7 @@ onBeforeUnmount(endDrag)
   color: var(--text-dim);
 }
 .tip.err {
-  color: #d70015;
+  color: var(--danger);
 }
 .notice {
   position: absolute;
@@ -272,7 +272,7 @@ onBeforeUnmount(endDrag)
   padding: 10px 14px;
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--fill-2);
   text-align: center;
 }
 .notice-title {
@@ -307,7 +307,7 @@ onBeforeUnmount(endDrag)
   position: absolute;
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 8px;
-  background: #fff;
+  background: var(--panel-bg);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   cursor: grab;
   user-select: none;
@@ -354,7 +354,7 @@ onBeforeUnmount(endDrag)
   white-space: nowrap;
 }
 .col-name.pk {
-  color: #b25000;
+  color: var(--warn);
   font-weight: 600;
 }
 .col-type {

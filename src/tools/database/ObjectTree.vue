@@ -153,7 +153,7 @@ onBeforeUnmount(() => document.removeEventListener('click', closeMenu))
   background: var(--hover);
 }
 .row.active {
-  background: rgba(10, 132, 255, 0.1);
+  background: var(--accent-soft);
 }
 .caret {
   flex: none;
@@ -204,13 +204,13 @@ onBeforeUnmount(() => document.removeEventListener('click', closeMenu))
   color: var(--text-dim);
 }
 .col.error {
-  color: #d70015;
+  color: var(--danger);
 }
 .pk {
   flex: none;
   width: 16px;
   font-size: 9px;
-  color: #b25000;
+  color: var(--warn);
   font-weight: 700;
 }
 .col-name {
@@ -234,7 +234,7 @@ onBeforeUnmount(() => document.removeEventListener('click', closeMenu))
   list-style: none;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--panel-bg);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
 }
 .menu-title {
@@ -260,9 +260,9 @@ onBeforeUnmount(() => document.removeEventListener('click', closeMenu))
 .menu .divider {
   height: 1px;
   margin: 4px 2px;
-  background: rgba(0, 0, 0, 0.06);
+  background: var(--fill-2);
 }
 .menu .danger {
-  color: #d70015;
+  color: var(--danger);
 }
 </style>

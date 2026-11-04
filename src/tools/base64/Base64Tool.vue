@@ -43,14 +43,47 @@ onBeforeUnmount(() => {
   save()
 })
 
-function sniffImage(bytes) {
+// 通过文件头识别常见二进制类型（图片 / 文档 / 压缩包 / 音视频 / 字体）
+function sniffMime(bytes) {
   if (bytes.length < 12) return ''
-  if (bytes[0] === 0x89 && bytes[1] === 0x50) return 'image/png'
-  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg'
-  if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46) return 'image/gif'
-  if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[8] === 0x57 && bytes[9] === 0x45) return 'image/webp'
-  if (bytes[0] === 0x42 && bytes[1] === 0x4d) return 'image/bmp'
+  const at = (i) => bytes[i]
+  if (at(0) === 0x89 && at(1) === 0x50) return 'image/png'
+  if (at(0) === 0xff && at(1) === 0xd8 && at(2) === 0xff) return 'image/jpeg'
+  if (at(0) === 0x47 && at(1) === 0x49 && at(2) === 0x46) return 'image/gif'
+  if (at(0) === 0x52 && at(1) === 0x49 && at(8) === 0x57 && at(9) === 0x45) return 'image/webp'
+  if (at(0) === 0x42 && at(1) === 0x4d) return 'image/bmp'
+  if (at(0) === 0x25 && at(1) === 0x50 && at(2) === 0x44 && at(3) === 0x46) return 'application/pdf'
+  if (at(0) === 0x50 && at(1) === 0x4b && at(2) === 0x03 && at(3) === 0x04) return 'application/zip'
+  if (at(0) === 0x1f && at(1) === 0x8b) return 'application/gzip'
+  if (at(0) === 0x52 && at(1) === 0x61 && at(2) === 0x72 && at(3) === 0x21) return 'application/vnd.rar'
+  if (at(0) === 0x49 && at(1) === 0x44 && at(2) === 0x33) return 'audio/mpeg'
+  if (at(0) === 0x4f && at(1) === 0x67 && at(2) === 0x67 && at(3) === 0x53) return 'audio/ogg'
+  if (at(0) === 0x77 && at(1) === 0x4f && at(2) === 0x46 && at(3) === 0x46) return 'font/woff'
+  if (at(0) === 0x77 && at(1) === 0x4f && at(2) === 0x46 && at(3) === 0x32) return 'font/woff2'
+  if (at(0) === 0x00 && at(1) === 0x00 && at(2) === 0x01 && at(3) === 0x00) return 'image/x-icon'
   return ''
+}
+
+const MIME_EXT = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+  'image/bmp': 'bmp',
+  'image/x-icon': 'ico',
+  'image/svg+xml': 'svg',
+  'application/pdf': 'pdf',
+  'application/zip': 'zip',
+  'application/gzip': 'gz',
+  'application/vnd.rar': 'rar',
+  'audio/mpeg': 'mp3',
+  'audio/ogg': 'ogg',
+  'font/woff': 'woff',
+  'font/woff2': 'woff2',
+}
+
+function isTextLike(mime) {
+  return !mime || mime.startsWith('text/') || mime === 'application/json' || mime === 'application/xml'
 }
 
 function normalizeBase64(src) {
@@ -79,11 +112,26 @@ const result = computed(() => {
     const b64 = normalizeBase64(dataUrl ? dataUrl[2] : raw)
     const bin = atob(b64)
     const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0))
-    const mime = dataUrl?.[1] || sniffImage(bytes)
-    const image = mime?.startsWith('image/')
-      ? { mime, dataUrl: `data:${mime};base64,${b64}` }
+    const mime = dataUrl?.[1] || sniffMime(bytes)
+
+    // 非文本类型（图片/PDF/压缩包/音视频/字体）额外给出文件卡片与下载
+    const file = mime && !isTextLike(mime)
+      ? {
+          mime,
+          size: bytes.length,
+          ext: MIME_EXT[mime] || 'bin',
+          image: mime.startsWith('image/'),
+          dataUrl: `data:${mime};base64,${b64}`,
+        }
       : null
-    return { ok: true, text: new TextDecoder().decode(bytes), error: '', image }
+
+    return {
+      ok: true,
+      text: file ? '' : new TextDecoder().decode(bytes),
+      error: '',
+      image: file?.image ? { mime, dataUrl: file.dataUrl } : null,
+      file,
+    }
   } catch {
     return {
       ok: false,
@@ -135,11 +183,11 @@ function formatSize(n) {
 }
 
 function downloadDecoded() {
-  if (!result.value.image) return
-  const ext = result.value.image.mime.split('/')[1].replace('jpeg', 'jpg').replace('svg+xml', 'svg')
+  const file = result.value.file
+  if (!file) return
   const a = document.createElement('a')
-  a.href = result.value.image.dataUrl
-  a.download = `decoded.${ext}`
+  a.href = file.dataUrl
+  a.download = `decoded.${file.ext}`
   a.click()
 }
 
@@ -261,13 +309,26 @@ async function copyText(value) {
         <div class="panel">
           <div class="panel-head">
             <span class="panel-title">
-              {{ result.image ? '图片预览' : mode === 'encode' ? 'Base64 结果' : '解码结果' }}
+              {{ result.file ? (result.file.image ? '图片预览' : '文件内容') : mode === 'encode' ? 'Base64 结果' : '解码结果' }}
             </span>
-            <button v-if="result.image" class="tbtn small" @click="downloadDecoded">下载文件</button>
+            <button v-if="result.file" class="tbtn small" @click="downloadDecoded">下载文件</button>
           </div>
-          <div v-if="result.image" class="image-view">
-            <img :src="result.image.dataUrl" />
+
+          <div v-if="result.file && result.file.image" class="image-view">
+            <img :src="result.file.dataUrl" />
           </div>
+
+          <div v-else-if="result.file" class="file-card">
+            <div class="file-icon">📄</div>
+            <div class="file-meta">
+              <p class="file-name">decoded.{{ result.file.ext }}</p>
+              <p class="file-sub">
+                {{ result.file.mime }} · {{ formatSize(result.file.size) }}
+              </p>
+            </div>
+            <button class="tbtn" @click="downloadDecoded">下载</button>
+          </div>
+
           <div v-else class="out" :class="{ error: !result.ok, placeholder: !input.trim() }">
             <template v-if="!result.ok">{{ result.error }}</template>
             <template v-else>{{ result.text || '等待输入…' }}</template>
@@ -292,17 +353,17 @@ async function copyText(value) {
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
-  background: #fff;
+  background: var(--panel-bg);
   border: 1px solid var(--border);
   border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .segmented {
   display: flex;
   gap: 2px;
   padding: 2px;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--fill-1);
   flex: none;
 }
 .segmented button {
@@ -312,7 +373,7 @@ async function copyText(value) {
   color: var(--text-dim);
 }
 .segmented button.on {
-  background: #fff;
+  background: var(--panel-bg);
   color: var(--text);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
@@ -378,13 +439,13 @@ async function copyText(value) {
   padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--panel-bg);
   outline: none;
   resize: none;
   font-family: 'SF Mono', Menlo, Consolas, monospace;
   font-size: 13px;
   line-height: 1.7;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .in:focus {
   border-color: var(--accent);
@@ -399,7 +460,7 @@ async function copyText(value) {
   padding: 20px;
   border: 1.5px dashed rgba(0, 0, 0, 0.18);
   border-radius: 10px;
-  background: #fff;
+  background: var(--panel-bg);
   cursor: pointer;
   overflow: hidden;
   transition: border-color 0.15s ease, background 0.15s ease;
@@ -420,7 +481,7 @@ async function copyText(value) {
   align-items: center;
   justify-content: center;
   border-radius: 14px;
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--fill-1);
   font-size: 24px;
   color: var(--text-dim);
 }
@@ -457,9 +518,9 @@ async function copyText(value) {
   flex-direction: column;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--panel-bg);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .panel-head {
   display: flex;
@@ -467,7 +528,7 @@ async function copyText(value) {
   gap: 8px;
   padding: 6px 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
   flex: none;
 }
 .panel-title {
@@ -484,12 +545,46 @@ async function copyText(value) {
   line-height: 1.7;
   white-space: pre-wrap;
   word-break: break-all;
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
 }
 .out.error {
-  color: #d70015;
+  color: var(--danger);
 }
 .out.placeholder {
+  color: var(--text-dim);
+}
+.file-card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+}
+.file-icon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--fill-1);
+  font-size: 20px;
+}
+.file-meta {
+  flex: 1;
+  min-width: 0;
+}
+.file-name {
+  margin: 0 0 3px;
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 13px;
+  font-weight: 600;
+}
+.file-sub {
+  margin: 0;
+  font-size: 11.5px;
   color: var(--text-dim);
 }
 .image-view {

@@ -1,9 +1,20 @@
 <script setup>
+import { ref } from 'vue'
+
 const keyword = defineModel('keyword', { type: String, default: '' })
 const view = defineModel('view', { type: String, default: 'grid' })
 
 defineProps({ title: { type: String, default: '' }, canBack: { type: Boolean, default: false } })
 const emit = defineEmits(['back'])
+
+const searchEl = ref(null)
+
+function focusSearch() {
+  searchEl.value?.focus()
+  searchEl.value?.select()
+}
+
+defineExpose({ focusSearch })
 </script>
 
 <template>
@@ -22,7 +33,16 @@ const emit = defineEmits(['back'])
     <h1 class="title">{{ title }}</h1>
 
     <div class="right">
-      <input v-if="!canBack" v-model="keyword" class="search" placeholder="搜索工具" />
+      <div v-if="!canBack" class="search-wrap">
+        <input
+          ref="searchEl"
+          v-model="keyword"
+          class="search"
+          placeholder="搜索工具"
+          @keyup.esc="keyword = ''"
+        />
+        <kbd class="kbd">⌘K</kbd>
+      </div>
       <div v-if="!canBack" class="segmented">
         <button :class="{ on: view === 'grid' }" title="图标视图" @click="view = 'grid'">▦</button>
         <button :class="{ on: view === 'list' }" title="列表视图" @click="view = 'list'">☰</button>
@@ -41,7 +61,7 @@ const emit = defineEmits(['back'])
   gap: 10px;
   padding: 0 14px;
   border-bottom: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--toolbar-bg);
   backdrop-filter: blur(30px);
 }
 .lights {
@@ -87,32 +107,50 @@ const emit = defineEmits(['back'])
   justify-content: flex-end;
   gap: 10px;
 }
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
 .search {
-  width: 150px;
-  padding: 4px 10px;
+  width: 168px;
+  padding: 4px 42px 4px 10px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.04);
+  background: var(--input-bg);
+  color: var(--text);
   outline: none;
 }
 .search:focus {
   border-color: var(--accent);
-  background: #fff;
+  background: var(--panel-bg);
+}
+.kbd {
+  position: absolute;
+  right: 6px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--fill-2);
+  font-family: inherit;
+  font-size: 10px;
+  color: var(--text-dim);
+  pointer-events: none;
 }
 .segmented {
   display: flex;
   padding: 1px;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.06);
+  background: var(--fill-2);
 }
 .segmented button {
   width: 28px;
   height: 22px;
   border-radius: 5px;
   line-height: 1;
+  color: var(--text);
 }
 .segmented button.on {
-  background: #fff;
+  background: var(--panel-bg);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 </style>

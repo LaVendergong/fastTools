@@ -51,14 +51,15 @@ const emit = defineEmits(['open'])
   border-radius: 8px;
 }
 .card:hover {
-  background: var(--hover);
+  background: var(--fill-1);
 }
 .card .name {
   font-weight: 500;
+  color: var(--text);
 }
 .card .desc {
   font-size: 11px;
-  line-height: 1.35;
+  line-height: 1.4;
   color: var(--text-dim);
   text-align: center;
 }

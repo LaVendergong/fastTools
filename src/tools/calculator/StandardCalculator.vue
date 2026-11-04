@@ -363,8 +363,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   padding: 12px;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: #f9f9fb;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  background: var(--surface-3);
+  box-shadow: var(--shadow-1);
 }
 .topbar {
   flex: none;
@@ -386,7 +386,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 }
 .hist-btn:hover,
 .hist-btn.on {
-  background: rgba(0, 0, 0, 0.06);
+  background: var(--fill-2);
   color: var(--text);
 }
 .screen {
@@ -399,7 +399,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   min-height: 92px;
   padding: 8px 10px;
   border-radius: 8px;
-  background: #fff;
+  background: var(--panel-bg);
   border: 1px solid rgba(0, 0, 0, 0.06);
 }
 .expr {
@@ -439,7 +439,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   font-weight: 500;
 }
 .memory button:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.06);
+  background: var(--fill-2);
   color: var(--text);
 }
 .memory button:disabled {
@@ -464,15 +464,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   transform: scale(0.97);
 }
 .num {
-  background: #fff;
+  background: var(--panel-bg);
   border: 1px solid rgba(0, 0, 0, 0.07);
   color: var(--text);
 }
 .num:hover {
-  background: #f2f2f5;
+  background: var(--surface-3);
 }
 .fn {
-  background: #f0f0f3;
+  background: var(--surface-3);
   border: 1px solid transparent;
   color: var(--text);
   font-size: 15px;
@@ -481,7 +481,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   background: #e6e6ea;
 }
 .op {
-  background: #f0f0f3;
+  background: var(--surface-3);
   border: 1px solid transparent;
   color: var(--text);
 }
@@ -493,7 +493,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   color: #fff;
 }
 .eq:hover {
-  background: #0071e3;
+  background: var(--accent-strong);
 }
 .history {
   width: 240px;
@@ -502,15 +502,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   flex-direction: column;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--panel-bg);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .history-head {
   flex: none;
   padding: 7px 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
   font-size: 12px;
   font-weight: 600;
 }

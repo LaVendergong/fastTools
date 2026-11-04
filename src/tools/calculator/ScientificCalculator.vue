@@ -191,8 +191,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   padding: 12px;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: #f9f9fb;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  background: var(--surface-3);
+  box-shadow: var(--shadow-1);
 }
 .screen {
   flex: none;
@@ -204,7 +204,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   min-height: 96px;
   padding: 8px 10px;
   border-radius: 8px;
-  background: #fff;
+  background: var(--panel-bg);
   border: 1px solid rgba(0, 0, 0, 0.06);
 }
 .expr-line {
@@ -237,7 +237,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 }
 .error {
   font-size: 13px;
-  color: #d70015;
+  color: var(--danger);
 }
 .keys {
   flex: 1;
@@ -257,15 +257,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   transform: scale(0.97);
 }
 .num {
-  background: #fff;
+  background: var(--panel-bg);
   border: 1px solid rgba(0, 0, 0, 0.07);
 }
 .num:hover {
-  background: #f2f2f5;
+  background: var(--surface-3);
 }
 .fn,
 .op {
-  background: #f0f0f3;
+  background: var(--surface-3);
   border: 1px solid transparent;
   font-size: 13.5px;
 }
@@ -282,7 +282,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   font-size: 18px;
 }
 .eq:hover {
-  background: #0071e3;
+  background: var(--accent-strong);
 }
 .toggle {
   background: #e9f2ff;
@@ -310,15 +310,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   flex-direction: column;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--panel-bg);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .history-head {
   flex: none;
   padding: 7px 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
   font-size: 12px;
   font-weight: 600;
 }

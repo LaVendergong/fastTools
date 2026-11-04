@@ -2,6 +2,21 @@
 import { onUnmounted, ref } from 'vue'
 
 const menus = ['文件', '编辑', '视图', '工具', '窗口', '帮助']
+const emit = defineEmits(['open-tool'])
+
+// 「文件」菜单直接打开文件管理器，其余菜单暂为占位
+function onMenuClick(name) {
+  if (name === '文件') emit('open-tool', 'files')
+}
+
+const THEME_KEY = 'toolbox:theme'
+const dark = ref(document.documentElement.classList.contains('dark'))
+
+function toggleTheme() {
+  dark.value = !dark.value
+  document.documentElement.classList.toggle('dark', dark.value)
+  localStorage.setItem(THEME_KEY, dark.value ? 'dark' : 'light')
+}
 const clock = ref('')
 const tick = () => {
   const now = new Date()
@@ -23,10 +38,21 @@ onUnmounted(() => clearInterval(timer))
     </span>
     <strong class="app-name">工具箱</strong>
     <nav>
-      <button v-for="m in menus" :key="m">{{ m }}</button>
+      <button
+        v-for="m in menus"
+        :key="m"
+        :class="{ actionable: m === '文件' }"
+        :title="m === '文件' ? '打开文件管理器' : ''"
+        @click="onMenuClick(m)"
+      >
+        {{ m }}
+      </button>
     </nav>
 
     <div class="status">
+      <button class="theme" :title="dark ? '切换到浅色' : '切换到深色'" @click="toggleTheme">
+        {{ dark ? '☀' : '☾' }}
+      </button>
       <span>🔋</span>
       <span>📶</span>
       <span>🔍</span>
@@ -44,8 +70,9 @@ onUnmounted(() => clearInterval(timer))
   gap: 18px;
   padding: 0 14px;
   color: #fff;
-  background: rgba(0, 0, 0, 0.22);
+  background: var(--menubar-bg);
   backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   font-size: 12.5px;
 }
 .apple {
@@ -61,9 +88,17 @@ nav {
 }
 nav button {
   color: rgba(255, 255, 255, 0.92);
+  padding: 1px 2px;
+  border-radius: 4px;
 }
 nav button:hover {
   color: #fff;
+}
+nav button.actionable {
+  cursor: pointer;
+}
+nav button.actionable:hover {
+  background: rgba(255, 255, 255, 0.16);
 }
 .status {
   margin-left: auto;
@@ -73,5 +108,16 @@ nav button:hover {
 }
 .clock {
   font-variant-numeric: tabular-nums;
+}
+.theme {
+  padding: 0 4px;
+  font-size: 13px;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.92);
+  border-radius: 4px;
+}
+.theme:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
 }
 </style>

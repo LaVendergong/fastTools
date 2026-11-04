@@ -277,8 +277,8 @@ onMounted(() => {
   padding: 14px 16px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  background: var(--panel-bg);
+  box-shadow: var(--shadow-1);
 }
 .head {
   flex: none;
@@ -298,13 +298,13 @@ onMounted(() => {
 .badge {
   padding: 1px 8px;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.06);
+  background: var(--fill-2);
   font-size: 10.5px;
   color: var(--text-dim);
 }
 .badge.live {
   background: rgba(52, 199, 89, 0.14);
-  color: #1d7a34;
+  color: var(--success);
 }
 .updated {
   font-size: 11px;
@@ -335,7 +335,7 @@ onMounted(() => {
   padding: 6px 8px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--panel-bg);
   font-size: 12.5px;
   outline: none;
 }
@@ -344,7 +344,7 @@ onMounted(() => {
   padding: 6px 14px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--panel-bg);
   font-size: 12px;
 }
 .refresh:hover:not(:disabled) {
@@ -358,10 +358,10 @@ onMounted(() => {
   flex: none;
   margin: 0;
   font-size: 11.5px;
-  color: #1d7a34;
+  color: var(--success);
 }
 .message.err {
-  color: #d70015;
+  color: var(--danger);
 }
 .table-wrap {
   flex: 1;
@@ -385,7 +385,7 @@ onMounted(() => {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: #fafafa;
+  background: var(--surface-4);
   font-size: 11px;
   font-weight: 600;
   color: var(--text-dim);
@@ -397,7 +397,7 @@ onMounted(() => {
   background: rgba(10, 132, 255, 0.05);
 }
 .grid tbody tr.on {
-  background: rgba(10, 132, 255, 0.1);
+  background: var(--accent-soft);
 }
 .name {
   display: flex;
@@ -427,7 +427,7 @@ onMounted(() => {
 .copied {
   margin-left: 8px;
   font-size: 10.5px;
-  color: #1d7a34;
+  color: var(--success);
 }
 .rate {
   text-align: right;

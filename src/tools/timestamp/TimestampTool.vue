@@ -243,10 +243,10 @@ async function copy(value, key) {
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
-  background: #fff;
+  background: var(--panel-bg);
   border: 1px solid var(--border);
   border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .label {
   font-size: 12px;
@@ -274,7 +274,7 @@ async function copy(value, key) {
   gap: 2px;
   padding: 2px;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--fill-1);
 }
 .segmented button {
   padding: 3px 11px;
@@ -283,7 +283,7 @@ async function copy(value, key) {
   color: var(--text-dim);
 }
 .segmented button.on {
-  background: #fff;
+  background: var(--panel-bg);
   color: var(--text);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
@@ -309,9 +309,9 @@ async function copy(value, key) {
   flex-direction: column;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--panel-bg);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .panel-head {
   display: flex;
@@ -319,7 +319,7 @@ async function copy(value, key) {
   gap: 8px;
   padding: 6px 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
   flex: none;
 }
 .panel-title {
@@ -342,7 +342,7 @@ async function copy(value, key) {
   padding: 6px 10px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--panel-bg);
   outline: none;
   font-size: 13px;
 }
@@ -390,6 +390,6 @@ dd {
 .err {
   margin: 10px 0 0;
   font-size: 12px;
-  color: #d70015;
+  color: var(--danger);
 }
 </style>

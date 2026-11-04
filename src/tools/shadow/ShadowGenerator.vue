@@ -170,10 +170,10 @@ async function copy() {
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
-  background: #fff;
+  background: var(--panel-bg);
   border: 1px solid var(--border);
   border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .presets {
   display: flex;
@@ -222,15 +222,15 @@ async function copy() {
   justify-content: center;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #f5f5f7;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-1);
   overflow: hidden;
 }
 .box {
   width: 160px;
   height: 160px;
   border-radius: 16px;
-  background: #fff;
+  background: var(--panel-bg);
 }
 .controls {
   min-height: 0;
@@ -238,8 +238,8 @@ async function copy() {
   padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  background: var(--panel-bg);
+  box-shadow: var(--shadow-1);
 }
 .ctrl {
   display: flex;
@@ -264,7 +264,7 @@ async function copy() {
   padding: 2px;
   border: 1px solid var(--border);
   border-radius: 5px;
-  background: #fff;
+  background: var(--panel-bg);
   cursor: pointer;
 }
 .val {
@@ -279,16 +279,16 @@ async function copy() {
   flex: none;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--panel-bg);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .panel-head {
   display: flex;
   align-items: center;
   padding: 6px 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
 }
 .panel-title {
   font-size: 12px;
@@ -305,7 +305,7 @@ async function copy() {
   font-family: 'SF Mono', Menlo, Consolas, monospace;
   font-size: 12.5px;
   line-height: 1.6;
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
   word-break: break-all;
 }
 </style>

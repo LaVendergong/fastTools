@@ -19,8 +19,13 @@ const GROUPS = [
   {
     name: '转换器',
     items: [
-      { id: 'volume', name: '体积', icon: '🧊' },
       { id: 'length', name: '长度', icon: '📏' },
+      { id: 'weight', name: '重量', icon: '⚖️' },
+      { id: 'area', name: '面积', icon: '🟦' },
+      { id: 'volume', name: '体积', icon: '🧊' },
+      { id: 'temperature', name: '温度', icon: '🌡️' },
+      { id: 'speed', name: '速度', icon: '🚀' },
+      { id: 'data', name: '存储', icon: '💾' },
     ],
   },
 ]
@@ -83,7 +88,12 @@ function select(id) {
       <ProgrammerCalculator v-else-if="mode === 'programmer'" />
       <DateCalculator v-else-if="mode === 'date'" />
       <UnitConverter v-else-if="mode === 'length'" category="length" />
+      <UnitConverter v-else-if="mode === 'weight'" category="weight" />
+      <UnitConverter v-else-if="mode === 'area'" category="area" />
       <UnitConverter v-else-if="mode === 'volume'" category="volume" />
+      <UnitConverter v-else-if="mode === 'temperature'" category="temperature" />
+      <UnitConverter v-else-if="mode === 'speed'" category="speed" />
+      <UnitConverter v-else-if="mode === 'data'" category="data" />
     </div>
   </div>
 </template>
@@ -105,8 +115,8 @@ function select(id) {
   padding: 10px 8px;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.86);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  background: var(--panel-bg);
+  box-shadow: var(--shadow-1);
   overflow-y: auto;
 }
 .nav.collapsed {
@@ -159,7 +169,7 @@ function select(id) {
   background: var(--hover);
 }
 .nav-item.on {
-  background: rgba(10, 132, 255, 0.12);
+  background: var(--accent-soft);
   color: var(--accent);
   font-weight: 500;
 }

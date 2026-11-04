@@ -182,15 +182,15 @@ function download() {
   padding: 20px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #f5f5f7;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-1);
   overflow: auto;
 }
 .canvas-wrap {
   display: flex;
   padding: 12px;
   border-radius: 12px;
-  background: #fff;
+  background: var(--panel-bg);
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.1);
 }
 .canvas {
@@ -204,7 +204,7 @@ function download() {
   border: 1px solid var(--border);
   border-radius: 7px;
   font-size: 12.5px;
-  background: #fff;
+  background: var(--panel-bg);
 }
 .tbtn:hover:not(:disabled) {
   background: var(--hover);
@@ -215,7 +215,7 @@ function download() {
   color: #fff;
 }
 .tbtn.primary:hover:not(:disabled) {
-  background: #0071e3;
+  background: var(--accent-strong);
 }
 .tbtn:disabled {
   opacity: 0.45;
@@ -225,7 +225,7 @@ function download() {
   margin: 0;
   max-width: 42ch;
   font-size: 12px;
-  color: #d70015;
+  color: var(--danger);
   text-align: center;
 }
 .panel {
@@ -234,15 +234,15 @@ function download() {
   flex-direction: column;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--panel-bg);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .panel-head {
   flex: none;
   padding: 6px 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
 }
 .panel-title {
   font-size: 12px;
@@ -289,7 +289,7 @@ function download() {
   padding: 4px 6px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--panel-bg);
   font-size: 12px;
   outline: none;
 }
@@ -298,7 +298,7 @@ function download() {
   gap: 2px;
   padding: 2px;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--fill-1);
 }
 .segmented button {
   width: 30px;
@@ -308,7 +308,7 @@ function download() {
   color: var(--text-dim);
 }
 .segmented button.on {
-  background: #fff;
+  background: var(--panel-bg);
   color: var(--text);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
@@ -318,7 +318,7 @@ function download() {
   padding: 2px;
   border: 1px solid var(--border);
   border-radius: 5px;
-  background: #fff;
+  background: var(--panel-bg);
   cursor: pointer;
 }
 code {

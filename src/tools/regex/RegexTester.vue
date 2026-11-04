@@ -94,32 +94,62 @@ watch(
 
 onBeforeUnmount(() => {
   clearTimeout(saveTimer)
+  clearTimeout(timer)
+  clearTimeout(debounceTimer)
+  worker?.terminate()
   save()
 })
 
-const result = computed(() => {
-  const { source, flags, text } = form
-  if (!source) return { error: '', matches: [], truncated: false }
+// 匹配放到 Web Worker 里跑：灾难性回溯只会让 Worker 超时被终止，主线程不卡
+const TIMEOUT_MS = 1200
+const result = ref({ error: '', matches: [], truncated: false })
 
-  let re
-  try {
-    re = new RegExp(source, flags)
-  } catch (e) {
-    return { error: e.message, matches: [], truncated: false }
-  }
+let worker = null
+let reqSeq = 0
+let timer = null
+let debounceTimer = null
 
-  const matches = []
-  const single = !flags.includes('g')
-  while (true) {
-    const m = re.exec(text)
-    if (!m) break
-    matches.push({ index: m.index, value: m[0], groups: m.slice(1), named: m.groups })
-    if (single) break
-    if (m[0] === '') re.lastIndex++ // 空匹配时防死循环
-    if (matches.length >= LIMIT) return { error: '', matches, truncated: true }
+function createWorker() {
+  const w = new Worker(new URL('./regex.worker.js', import.meta.url), { type: 'module' })
+  w.onmessage = (e) => {
+    if (e.data.id !== reqSeq) return
+    clearTimeout(timer)
+    result.value = e.data.ok
+      ? { error: '', matches: e.data.matches, truncated: e.data.truncated }
+      : { error: e.data.error, matches: [], truncated: false }
   }
-  return { error: '', matches, truncated: false }
-})
+  return w
+}
+
+function runMatch() {
+  clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => {
+    const { source, flags, text } = form
+    if (!source) {
+      result.value = { error: '', matches: [], truncated: false }
+      return
+    }
+
+    if (!worker) worker = createWorker()
+    const id = ++reqSeq
+    clearTimeout(timer)
+    timer = setTimeout(() => {
+      // 超时说明正则卡住了，直接销毁 Worker 换新的
+      worker.terminate()
+      worker = createWorker()
+      result.value = {
+        error: `执行超过 ${TIMEOUT_MS / 1000} 秒已中止：表达式可能存在灾难性回溯（如 (a+)+$），或文本过长`,
+        matches: [],
+        truncated: false,
+        timeout: true,
+      }
+    }, TIMEOUT_MS)
+
+    worker.postMessage({ id, source, flags, text })
+  }, 120)
+}
+
+watch(() => [form.source, form.flags, form.text], runMatch, { immediate: true })
 
 const badgeClass = computed(() =>
   result.value.error ? 'err' : result.value.matches.length ? 'ok' : 'idle',
@@ -233,7 +263,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
         />
         <span class="slash">/</span>
         <span class="badge" :class="badgeClass" :title="result.error">
-          <template v-if="result.error">正则无效</template>
+          <template v-if="result.error">{{ result.timeout ? '执行超时' : '正则无效' }}</template>
           <template v-else-if="result.matches.length">
             匹配 {{ result.matches.length }} 处{{ result.truncated ? `（前 ${LIMIT} 处）` : '' }}
           </template>
@@ -373,10 +403,10 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
   flex-direction: column;
   gap: 8px;
   padding: 10px 12px;
-  background: #fff;
+  background: var(--panel-bg);
   border: 1px solid var(--border);
   border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .row {
   display: flex;
@@ -393,7 +423,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
   padding: 5px 9px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--panel-bg);
   outline: none;
   font-family: 'SF Mono', Menlo, Consolas, monospace;
   font-size: 13px;
@@ -431,22 +461,22 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
 }
 .badge.ok {
   background: rgba(52, 199, 89, 0.12);
-  color: #1d7a34;
+  color: var(--success);
 }
 .badge.idle {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--fill-1);
   color: var(--text-dim);
 }
 .badge.err {
   background: rgba(255, 59, 48, 0.1);
-  color: #d70015;
+  color: var(--danger);
 }
 .flags {
   display: flex;
   gap: 2px;
   padding: 2px;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--fill-1);
   flex: none;
 }
 .flags button {
@@ -485,8 +515,8 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
   padding: 4px 4px 6px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  background: var(--panel-bg);
+  box-shadow: var(--shadow-2);
 }
 .tpl-group {
   margin: 8px 8px 3px;
@@ -526,7 +556,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
 .copy-ok {
   flex: none;
   font-size: 11px;
-  color: #1d7a34;
+  color: var(--success);
 }
 
 /* ── 主体两栏 ── */
@@ -542,11 +572,11 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--panel-bg);
   outline: none;
   resize: none;
   line-height: 1.6;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .text:focus {
   border-color: var(--accent);
@@ -564,9 +594,9 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
   flex-direction: column;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--panel-bg);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .panel-head {
   display: flex;
@@ -574,7 +604,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
   gap: 8px;
   padding: 6px 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
   flex: none;
 }
 .panel-title {
@@ -597,7 +627,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
   color: var(--text-dim);
 }
 .tabs button.on {
-  background: #fff;
+  background: var(--panel-bg);
   color: var(--text);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
@@ -618,7 +648,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
   white-space: pre-wrap;
   word-break: break-all;
   line-height: 1.7;
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
 }
 .hit {
   border-radius: 3px;
@@ -626,7 +656,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
 }
 .hit.current {
-  background: #0a84ff;
+  background: var(--accent);
   color: #fff;
 }
 .empty {
@@ -635,7 +665,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
   background: #ffd60a;
 }
 .hit.current.empty {
-  background: #0a84ff;
+  background: var(--accent);
 }
 .list {
   flex: 1;
@@ -658,7 +688,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
   background: var(--hover);
 }
 .item.active {
-  background: rgba(10, 132, 255, 0.1);
+  background: var(--accent-soft);
 }
 .head {
   display: flex;

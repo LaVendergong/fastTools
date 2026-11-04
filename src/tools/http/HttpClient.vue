@@ -59,12 +59,46 @@ const apiKeyName = ref(saved.apiKeyName ?? 'X-API-Key')
 const apiKeyValue = ref(saved.apiKeyValue ?? '')
 const apiKeyIn = ref(saved.apiKeyIn ?? 'header')
 
+const params = ref(saved.params?.length ? saved.params : [{ key: '', value: '' }])
+const history = ref(saved.history ?? [])
+const historyOpen = ref(false)
+
 const reqTab = ref('headers')
 const resTab = ref('body')
 const loading = ref(false)
 const error = ref('')
 const response = ref(null) // { status, statusText, ms, size, headers, body }
 const copied = ref(false)
+
+// URL 查询参数：Params 面板里的行会拼进实际请求地址
+const effectiveUrl = computed(() => {
+  const base = url.value.trim()
+  if (!base) return ''
+  const rows = params.value.filter((p) => p.key.trim())
+  if (!rows.length) return base
+  try {
+    const u = new URL(base)
+    for (const p of rows) u.searchParams.set(p.key.trim(), p.value)
+    return u.toString()
+  } catch {
+    const qs = rows
+      .map((p) => `${encodeURIComponent(p.key.trim())}=${encodeURIComponent(p.value)}`)
+      .join('&')
+    return `${base}${base.includes('?') ? '&' : '?'}${qs}`
+  }
+})
+
+const paramCount = computed(() => params.value.filter((p) => p.key.trim()).length)
+
+function pushHistory(entry) {
+  history.value = [entry, ...history.value.filter((h) => !(h.url === entry.url && h.method === entry.method))].slice(0, 20)
+}
+
+function useHistory(item) {
+  method.value = item.method
+  url.value = item.url
+  historyOpen.value = false
+}
 
 const hasBody = computed(() => method.value !== 'GET' && method.value !== 'HEAD')
 const activeHeaders = computed(() => headers.value.filter((h) => h.key.trim()).length)
@@ -90,12 +124,14 @@ function save() {
       apiKeyName: apiKeyName.value,
       apiKeyValue: apiKeyValue.value,
       apiKeyIn: apiKeyIn.value,
+      params: params.value,
+      history: history.value,
     }),
   )
 }
 
 watch(
-  [method, url, headers, bodyType, body, formRows, useProxy, authType, authToken, authUser, authPass, apiKeyName, apiKeyValue, apiKeyIn],
+  [method, url, headers, bodyType, body, formRows, useProxy, authType, authToken, authUser, authPass, apiKeyName, apiKeyValue, apiKeyIn, params, history],
   () => {
     clearTimeout(saveTimer)
     saveTimer = setTimeout(save, 300)
@@ -136,7 +172,7 @@ function formatSize(n) {
 }
 
 async function send() {
-  const target = url.value.trim()
+  const target = effectiveUrl.value
   if (!target) return
 
   loading.value = true
@@ -229,8 +265,22 @@ async function send() {
       headers: list,
       body: pretty,
     }
+    pushHistory({
+      method: method.value,
+      url: finalUrl,
+      status: res.status,
+      ms: response.value.ms,
+      time: Date.now(),
+    })
   } catch (e) {
     error.value = e.message
+    pushHistory({
+      method: method.value,
+      url: finalUrl ?? target,
+      status: 0,
+      ms: Math.round(performance.now() - started),
+      time: Date.now(),
+    })
   } finally {
     loading.value = false
   }
@@ -282,7 +332,26 @@ async function copyResponse() {
       >
         代理
       </button>
-      <button class="send" :disabled="loading || !url.trim()" @click="send">
+      <div class="hist">
+        <button class="toggle" :class="{ on: historyOpen }" @click="historyOpen = !historyOpen">
+          历史 {{ history.length || '' }}
+        </button>
+        <div v-if="historyOpen" class="hist-menu">
+          <p v-if="!history.length" class="hist-empty">还没有请求记录</p>
+          <button v-for="(h, i) in history" :key="i" class="hist-item" @click="useHistory(h)">
+            <span
+              class="hm"
+              :class="h.status === 0 ? 'bad' : h.status >= 400 ? 'warn' : 'ok'"
+            >{{ h.method }}</span>
+            <span class="hu">{{ h.url }}</span>
+            <span class="hs">{{ h.status || '失败' }}</span>
+          </button>
+          <button v-if="history.length" class="hist-clear" @click="history = []; historyOpen = false">
+            清空历史
+          </button>
+        </div>
+      </div>
+      <button class="send" :disabled="loading || !effectiveUrl" @click="send">
         {{ loading ? '发送中…' : '发送' }}
       </button>
     </div>
@@ -290,6 +359,9 @@ async function copyResponse() {
     <div class="panel">
       <div class="panel-head">
         <div class="tabs">
+          <button :class="{ on: reqTab === 'params' }" @click="reqTab = 'params'">
+            Params {{ paramCount || '' }}
+          </button>
           <button :class="{ on: reqTab === 'auth' }" @click="reqTab = 'auth'">
             Authorization
           </button>
@@ -302,6 +374,17 @@ async function copyResponse() {
         <button v-if="reqTab === 'headers'" class="link head-action" @click="addHeader">
           ＋ 添加
         </button>
+      </div>
+
+      <!-- URL 查询参数 -->
+      <div v-if="reqTab === 'params'" class="kv-list">
+        <div v-for="(p, i) in params" :key="i" class="kv">
+          <input v-model="p.key" placeholder="参数名" spellcheck="false" />
+          <input v-model="p.value" placeholder="值" spellcheck="false" />
+          <button class="del" title="删除" @click="params.splice(i, 1)">✕</button>
+        </div>
+        <button class="link add-row" @click="params.push({ key: '', value: '' })">＋ 添加参数</button>
+        <p v-if="paramCount" class="url-preview">{{ effectiveUrl }}</p>
       </div>
 
       <!-- Authorization -->
@@ -470,10 +553,10 @@ async function copyResponse() {
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: #fff;
+  background: var(--panel-bg);
   border: 1px solid var(--border);
   border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .method {
   flex: none;
@@ -481,7 +564,7 @@ async function copyResponse() {
   padding: 5px 8px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--panel-bg);
   font-family: 'SF Mono', Menlo, Consolas, monospace;
   font-size: 12.5px;
   font-weight: 600;
@@ -493,7 +576,7 @@ async function copyResponse() {
   padding: 5px 10px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--panel-bg);
   outline: none;
   font-family: 'SF Mono', Menlo, Consolas, monospace;
   font-size: 13px;
@@ -533,7 +616,7 @@ async function copyResponse() {
   font-weight: 500;
 }
 .send:hover:not(:disabled) {
-  background: #0071e3;
+  background: var(--accent-strong);
 }
 .send:disabled {
   opacity: 0.45;
@@ -545,9 +628,9 @@ async function copyResponse() {
   flex-direction: column;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--panel-bg);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
   max-height: 48%;
 }
 .panel.grow {
@@ -560,7 +643,7 @@ async function copyResponse() {
   gap: 8px;
   padding: 6px 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
   flex: none;
 }
 .tabs {
@@ -574,7 +657,7 @@ async function copyResponse() {
   color: var(--text-dim);
 }
 .tabs button.on {
-  background: #fff;
+  background: var(--panel-bg);
   color: var(--text);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
@@ -601,7 +684,7 @@ async function copyResponse() {
 .chip {
   padding: 2px 9px;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--fill-1);
   font-family: 'SF Mono', Menlo, Consolas, monospace;
   font-size: 11px;
   color: var(--text-dim);
@@ -620,16 +703,16 @@ async function copyResponse() {
   font-weight: 600;
 }
 .status.ok {
-  color: #1d7a34;
+  color: var(--success);
 }
 .status.info {
   color: #0a6dd6;
 }
 .status.warn {
-  color: #b25000;
+  color: var(--warn);
 }
 .status.bad {
-  color: #d70015;
+  color: var(--danger);
 }
 .copy {
   font-size: 11.5px;
@@ -660,7 +743,7 @@ async function copyResponse() {
   border-color: var(--accent);
 }
 .kv input:disabled {
-  background: rgba(0, 0, 0, 0.03);
+  background: var(--fill-1);
   color: var(--text-dim);
 }
 .del {
@@ -671,7 +754,7 @@ async function copyResponse() {
 }
 .del:hover {
   background: var(--hover);
-  color: #d70015;
+  color: var(--danger);
 }
 .file-btn {
   flex: none;
@@ -745,7 +828,7 @@ async function copyResponse() {
   padding: 4px 6px;
   border: 1px solid var(--border);
   border-radius: 5px;
-  background: #fff;
+  background: var(--panel-bg);
   outline: none;
   font-size: 12px;
 }
@@ -790,13 +873,13 @@ async function copyResponse() {
   line-height: 1.65;
   white-space: pre-wrap;
   word-break: break-all;
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
 }
 .out.placeholder {
   color: var(--text-dim);
 }
 .out.error {
-  color: #d70015;
+  color: var(--danger);
 }
 .err-title {
   margin: 0 0 4px;
@@ -809,12 +892,105 @@ async function copyResponse() {
 .err-hint code {
   padding: 1px 4px;
   border-radius: 3px;
-  background: rgba(0, 0, 0, 0.06);
+  background: var(--fill-2);
 }
 .out.headers p {
   margin: 0 0 2px;
 }
 .hk {
   color: var(--text-dim);
+}
+.hist {
+  position: relative;
+  flex: none;
+}
+.hist-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  width: 380px;
+  max-height: 320px;
+  overflow: auto;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-bg);
+  box-shadow: var(--shadow-2);
+}
+.hist-empty {
+  margin: 10px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  text-align: center;
+}
+.hist-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 8px;
+  border-radius: 5px;
+  text-align: left;
+}
+.hist-item:hover {
+  background: var(--hover);
+}
+.hm {
+  flex: none;
+  padding: 0 5px;
+  border-radius: 3px;
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 600;
+}
+.hm.ok {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.hm.warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.hm.bad {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.hu {
+  flex: 1;
+  min-width: 0;
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hs {
+  flex: none;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+.hist-clear {
+  width: 100%;
+  margin-top: 4px;
+  padding: 5px;
+  border-top: 1px solid var(--border);
+  font-size: 11.5px;
+  color: var(--accent);
+}
+.add-row {
+  margin-top: 6px;
+}
+.url-preview {
+  margin: 8px 0 0;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--code-bg);
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 10.5px;
+  color: var(--text-dim);
+  word-break: break-all;
 }
 </style>

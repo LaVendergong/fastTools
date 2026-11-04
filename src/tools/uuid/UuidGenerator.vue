@@ -110,10 +110,10 @@ async function copy(value, key) {
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
-  background: #fff;
+  background: var(--panel-bg);
   border: 1px solid var(--border);
   border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .label {
   font-size: 12px;
@@ -125,7 +125,7 @@ async function copy(value, key) {
   padding: 4px 6px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--panel-bg);
   font-size: 12px;
   outline: none;
 }
@@ -162,7 +162,7 @@ async function copy(value, key) {
   color: #fff;
 }
 .tbtn.primary:hover {
-  background: #0071e3;
+  background: var(--accent-strong);
 }
 .panel {
   flex: 1;
@@ -171,9 +171,9 @@ async function copy(value, key) {
   flex-direction: column;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--panel-bg);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 .panel-head {
   flex: none;
@@ -181,7 +181,7 @@ async function copy(value, key) {
   align-items: center;
   padding: 6px 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(0, 0, 0, 0.015);
+  background: var(--fill-1);
 }
 .panel-title {
   font-size: 12px;
@@ -229,7 +229,7 @@ code {
 .copied {
   flex: none;
   font-size: 11px;
-  color: #1d7a34;
+  color: var(--success);
   opacity: 0;
   transition: opacity 0.15s ease;
 }

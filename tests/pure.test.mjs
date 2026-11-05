@@ -3,7 +3,15 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { commonPrefix, collectFiles } from '../src/tools/files/zip.js'
+import JSZip from 'jszip'
+import {
+  collectFiles,
+  commonPrefix,
+  EMPTY_DIR,
+  EMPTY_ZIP,
+  extractZipInto,
+  zipEntryToBlob,
+} from '../src/tools/files/zip.js'
 import { fitLinear, fitQuadratic, rSquared } from '../src/tools/graphing/fitting.js'
 import { buildRequest, buildUrl, proxyEndpoint, utf8ToBase64, withQueryParam } from '../src/tools/http/build.js'
 import { mergeHistory } from '../src/tools/http/history.js'
@@ -226,4 +234,84 @@ test('collectFiles: 递归拼出相对路径', async () => {
 
   const list = await collectFiles(root)
   assert.deepEqual(list.map((f) => f.path).sort(), ['a.txt', 'sub/b.txt', 'sub/deep/c.txt'])
+})
+
+/* ---------------- 打包 / 解压服务 ---------------- */
+
+const fakeFile = (name, text) => ({
+  kind: 'file',
+  name,
+  async getFile() {
+    return new File([text], name)
+  },
+})
+
+const fakeDirNode = (children = []) => ({
+  kind: 'directory',
+  async *entries() {
+    for (const child of children) yield child
+  },
+})
+
+test('zipEntryToBlob: 目录打包后保留外层目录名', async () => {
+  const dir = fakeDirNode([
+    ['a.txt', fakeFile('a.txt', 'A')],
+    ['sub', fakeDirNode([['b.txt', fakeFile('b.txt', 'B')]])],
+  ])
+
+  const blob = await zipEntryToBlob({ name: 'proj', kind: 'dir', handle: dir })
+  const zip = await JSZip.loadAsync(blob)
+  // JSZip 会同时生成目录条目（proj/、proj/sub/）
+  assert.deepEqual(Object.keys(zip.files).sort(), [
+    'proj/',
+    'proj/a.txt',
+    'proj/sub/',
+    'proj/sub/b.txt',
+  ])
+  assert.equal(await zip.file('proj/a.txt').async('string'), 'A')
+})
+
+test('zipEntryToBlob: 空目录抛出 EMPTY_DIR', async () => {
+  await assert.rejects(
+    () => zipEntryToBlob({ name: 'empty', kind: 'dir', handle: fakeDirNode([]) }),
+    (e) => e.message === EMPTY_DIR,
+  )
+})
+
+test('extractZipInto: 剥掉公共顶层目录，按原路径写出', async () => {
+  const zip = new JSZip()
+  zip.file('proj/a.txt', 'A')
+  zip.file('proj/sub/b.txt', 'B')
+  const blob = await zip.generateAsync({ type: 'blob' })
+
+  const written = []
+  const makeDir = (prefix) => ({
+    async getDirectoryHandle(name) {
+      return makeDir(`${prefix}${name}/`)
+    },
+    async getFileHandle(name) {
+      return {
+        async createWritable() {
+          return {
+            async write(data) {
+              written.push({ path: `${prefix}${name}`, size: data.size })
+            },
+            async close() {},
+          }
+        },
+      }
+    },
+  })
+
+  const res = await extractZipInto(makeDir(''), blob)
+  assert.equal(res.count, 2)
+  assert.deepEqual(written.map((w) => w.path).sort(), ['a.txt', 'sub/b.txt'])
+})
+
+test('extractZipInto: 空压缩包抛出 EMPTY_ZIP', async () => {
+  const blob = await new JSZip().generateAsync({ type: 'blob' })
+  await assert.rejects(
+    () => extractZipInto({}, blob),
+    (e) => e.message === EMPTY_ZIP,
+  )
 })

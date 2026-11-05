@@ -1,8 +1,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
-import JSZip from 'jszip'
 import { requestOpenFile } from '../../lib/appBus'
-import { collectFiles, commonPrefix } from './zip'
+import { EMPTY_DIR, EMPTY_ZIP, extractZipInto, zipEntryToBlob } from './zip'
 import {
   createDir,
   ensurePermission,
@@ -296,29 +295,9 @@ async function zipEntry(entry) {
   zipProgress.value = 0
 
   try {
-    const zip = new JSZip()
-
-    if (entry.kind === 'dir') {
-      const files = await collectFiles(entry.handle)
-      if (!files.length) {
-        error.value = '这个文件夹是空的，没什么可打包'
-        return
-      }
-      for (const file of files) {
-        const blob = await readFileBlob(file.handle)
-        zip.file(`${entry.name}/${file.path}`, blob)
-      }
-    } else {
-      const blob = await readFileBlob(entry.handle)
-      zip.file(entry.name, blob)
-    }
-
-    const blob = await zip.generateAsync(
-      { type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } },
-      (meta) => {
-        zipProgress.value = Math.round(meta.percent)
-      },
-    )
+    const blob = await zipEntryToBlob(entry, (percent) => {
+      zipProgress.value = percent
+    })
 
     const base = entry.kind === 'dir' ? entry.name : entry.name.replace(/\.[^.]+$/, '')
     const name = uniqueName(base, '.zip')
@@ -326,19 +305,12 @@ async function zipEntry(entry) {
     await refresh()
     notice.value = `已打包 ${name}（${formatSize(blob.size)}）`
   } catch (e) {
-    error.value = `打包失败：${e.message}`
+    error.value =
+      e.message === EMPTY_DIR ? '这个文件夹是空的，没什么可打包' : `打包失败：${e.message}`
   } finally {
     zipBusy.value = ''
     zipProgress.value = 0
   }
-}
-
-async function resolveNestedDir(rootDir, segments) {
-  let dir = rootDir
-  for (const seg of segments) {
-    dir = await dir.getDirectoryHandle(seg, { create: true })
-  }
-  return dir
 }
 
 async function unzipEntry(entry) {
@@ -351,37 +323,17 @@ async function unzipEntry(entry) {
 
   try {
     const blob = await readFileBlob(entry.handle)
-    const zip = await JSZip.loadAsync(blob)
-    const files = Object.values(zip.files).filter((f) => !f.dir)
-
-    if (!files.length) {
-      error.value = '压缩包里没有文件'
-      return
-    }
-
     const folder = uniqueName(entry.name.replace(/\.zip$/i, ''))
     const targetDir = await createDir(currentDir.value, folder)
 
-    // 若所有条目都在同一个顶层目录下（如 zip-test/a.txt），剥掉这层，避免解压后多套一层文件夹
-    const prefix = commonPrefix(files.map((f) => f.name))
-
-    let done = 0
-    for (const file of files) {
-      const rel = file.name.startsWith(prefix) ? file.name.slice(prefix.length) : file.name
-      const segments = rel.split('/').filter(Boolean)
-      const fileName = segments.pop()
-      if (!fileName) continue
-      const dir = await resolveNestedDir(targetDir, segments)
-      const data = await file.async('blob')
-      await writeFile(dir, fileName, data)
-      done += 1
-      zipProgress.value = Math.round((done / files.length) * 100)
-    }
+    const { count } = await extractZipInto(targetDir, blob, (percent) => {
+      zipProgress.value = percent
+    })
 
     await refresh()
-    notice.value = `已解压 ${files.length} 个文件到「${folder}」`
+    notice.value = `已解压 ${count} 个文件到「${folder}」`
   } catch (e) {
-    error.value = `解压失败：${e.message}`
+    error.value = e.message === EMPTY_ZIP ? '压缩包里没有文件' : `解压失败：${e.message}`
   } finally {
     zipBusy.value = ''
     zipProgress.value = 0

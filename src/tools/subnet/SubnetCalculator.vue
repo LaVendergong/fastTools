@@ -4,6 +4,12 @@ import { computed, ref } from 'vue'
 const input = ref('192.168.1.10/24')
 const splitPrefix = ref(26)
 
+// 右侧面板切换：拆分子网 / 展开 IP 列表
+const panelTab = ref('split')
+const ipMode = ref('hosts') // hosts | all
+const MAX_IP = 1024
+const ipCopied = ref('')
+
 /* ---------------- IP 工具 ---------------- */
 
 function parseIp(text) {
@@ -165,6 +171,46 @@ const subnetTotal = computed(() => {
   return 2 ** (newPrefix - base.prefix)
 })
 
+// 网段展开：把 CIDR 里的地址逐个列出来
+const ipList = computed(() => {
+  const base = parsed.value
+  const empty = { items: [], total: 0, truncated: false }
+  if (!base.ok) return empty
+
+  let start
+  let end
+  if (ipMode.value === 'all') {
+    start = base.networkInt
+    end = base.networkInt + base.totalHosts - 1
+  } else if (base.prefix <= 30) {
+    // 排除网络地址与广播地址
+    start = base.networkInt + 1
+    end = base.networkInt + base.totalHosts - 2
+  } else {
+    start = base.networkInt
+    end = base.networkInt + base.totalHosts - 1
+  }
+
+  const total = Math.max(0, end - start + 1)
+  const limit = Math.min(total, MAX_IP)
+  const items = []
+  for (let i = 0; i < limit; i += 1) items.push(ipToStr(start + i))
+  return { items, total, truncated: total > limit }
+})
+
+async function copyIpList() {
+  if (!ipList.value.items.length) return
+  try {
+    await navigator.clipboard.writeText(ipList.value.items.join('\n'))
+    ipCopied.value = 'ips'
+    setTimeout(() => {
+      if (ipCopied.value === 'ips') ipCopied.value = ''
+    }, 1200)
+  } catch {
+    /* 忽略 */
+  }
+}
+
 const copied = ref('')
 
 async function copy(text, tag) {
@@ -270,33 +316,64 @@ const rows = computed(() => {
 
         <section class="split">
           <div class="split-head">
-            <span class="info-title">拆分子网</span>
-            <span class="k">新前缀 /</span>
-            <input v-model.number="splitPrefix" class="num" type="number" :min="parsed.prefix + 1" max="32" />
-            <span v-if="subnetTotal" class="split-meta">共 {{ subnetTotal }} 个子网</span>
-          </div>
-
-          <div v-if="!subnets.length" class="split-tip">
-            把前缀设成大于 /{{ parsed.prefix }} 的值（如 /{{ Math.min(32, parsed.prefix + 2) }}）来拆分
-          </div>
-
-          <div v-else class="split-table">
-            <div class="st-head">
-              <span>#</span>
-              <span>子网</span>
-              <span>可用范围</span>
-              <span>可用数</span>
+            <div class="panel-tabs">
+              <button :class="{ on: panelTab === 'split' }" @click="panelTab = 'split'">拆分子网</button>
+              <button :class="{ on: panelTab === 'ips' }" @click="panelTab = 'ips'">展开 IP</button>
             </div>
+
+            <template v-if="panelTab === 'split'">
+              <span class="k">新前缀 /</span>
+              <input v-model.number="splitPrefix" class="num" type="number" :min="parsed.prefix + 1" max="32" />
+              <span v-if="subnetTotal" class="split-meta">共 {{ subnetTotal }} 个子网</span>
+            </template>
+
+            <template v-else>
+              <select v-model="ipMode" class="ip-select">
+                <option value="hosts">仅可用地址</option>
+                <option value="all">含网络/广播</option>
+              </select>
+              <span class="split-meta">共 {{ ipList.total.toLocaleString('zh-CN') }} 个</span>
+              <button class="mini" @click="copyIpList">
+                {{ ipCopied === 'ips' ? '已复制' : '复制全部' }}
+              </button>
+            </template>
+          </div>
+
+          <template v-if="panelTab === 'split'">
+            <div v-if="!subnets.length" class="split-tip">
+              把前缀设成大于 /{{ parsed.prefix }} 的值（如 /{{ Math.min(32, parsed.prefix + 2) }}）来拆分
+            </div>
+
+            <div v-else class="split-table">
+              <div class="st-head">
+                <span>#</span>
+                <span>子网</span>
+                <span>可用范围</span>
+                <span>可用数</span>
+              </div>
+              <div class="st-body">
+                <div v-for="s in subnets" :key="s.index" class="st-row">
+                  <span class="st-idx">{{ s.index }}</span>
+                  <span class="mono">{{ s.cidr }}</span>
+                  <span class="mono dim">{{ s.range }}</span>
+                  <span class="st-num">{{ s.usable.toLocaleString('zh-CN') }}</span>
+                </div>
+              </div>
+              <p v-if="subnetTotal > subnets.length" class="st-more">
+                仅显示前 {{ subnets.length }} 个，共 {{ subnetTotal }} 个
+              </p>
+            </div>
+          </template>
+
+          <div v-else class="ip-list">
             <div class="st-body">
-              <div v-for="s in subnets" :key="s.index" class="st-row">
-                <span class="st-idx">{{ s.index }}</span>
-                <span class="mono">{{ s.cidr }}</span>
-                <span class="mono dim">{{ s.range }}</span>
-                <span class="st-num">{{ s.usable.toLocaleString('zh-CN') }}</span>
+              <div v-for="(ip, i) in ipList.items" :key="ip" class="ip-row">
+                <span class="st-idx">{{ i + 1 }}</span>
+                <span class="mono">{{ ip }}</span>
               </div>
             </div>
-            <p v-if="subnetTotal > subnets.length" class="st-more">
-              仅显示前 {{ subnets.length }} 个，共 {{ subnetTotal }} 个
+            <p v-if="ipList.truncated" class="st-more">
+              仅显示前 {{ MAX_IP }} 个，共 {{ ipList.total.toLocaleString('zh-CN') }} 个
             </p>
           </div>
         </section>
@@ -596,6 +673,51 @@ const rows = computed(() => {
   border-top: 1px solid var(--border);
   font-size: 9.5px;
   color: var(--text-faint);
+}
+.panel-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 6px;
+  background: var(--fill-2);
+}
+.panel-tabs button {
+  padding: 2px 9px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  color: var(--text-dim);
+}
+.panel-tabs button.on {
+  background: var(--panel-bg);
+  color: var(--text);
+  font-weight: 500;
+}
+.ip-select {
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--panel-bg);
+  color: var(--text);
+  outline: none;
+  font-size: 10px;
+}
+.ip-list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.ip-row {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 8px;
+  padding: 3px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+}
+.ip-row:hover {
+  background: var(--fill-1);
 }
 .note {
   flex: none;

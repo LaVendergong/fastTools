@@ -51,6 +51,22 @@ import DevSetupGuide from './devsetup/DevSetupGuide.vue'
 import ImageCompressor from './image-batch/ImageCompressor.vue'
 import DockerComposeConverter from './docker/DockerComposeConverter.vue'
 import JsonGraph from './json-graph/JsonGraph.vue'
+import JsonToTs from './json-ts/JsonToTs.vue'
+import FileSearch from './search/FileSearch.vue'
+import ChmodCalculator from './chmod/ChmodCalculator.vue'
+import RsaKeyPair from './rsa/RsaKeyPair.vue'
+import ExifTool from './exif/ExifTool.vue'
+import ExcelTool from './excel/ExcelTool.vue'
+import PdfTool from './pdf/PdfTool.vue'
+import SqlToCode from './sql-code/SqlToCode.vue'
+import UrlParser from './url/UrlParser.vue'
+import ImageStitcher from './image-stitch/ImageStitcher.vue'
+import FaviconGenerator from './favicon/FaviconGenerator.vue'
+import QrDesigner from './qr-design/QrDesigner.vue'
+import NginxGenerator from './nginx/NginxGenerator.vue'
+import CsvToSql from './csv-sql/CsvToSql.vue'
+import CertInspector from './cert/CertInspector.vue'
+import TextDiff from './diff/TextDiff.vue'
 
 /**
  * 工具注册表：新增工具只需往 tools 里加一项。
@@ -170,8 +186,8 @@ const rawTools = [
 
   {
     id: 'uuid',
-    name: 'UUID 生成',
-    desc: '批量生成 UUID v4',
+    name: 'ID 生成',
+    desc: 'UUID v4/v7、ULID 与短 ID',
     glyph: '#',
     hue: 150,
     category: 'dev',
@@ -482,6 +498,150 @@ const rawTools = [
     hue: 250,
     category: 'dev',
     component: JsonGraph,
+  },
+  {
+    id: 'json-ts',
+    name: 'JSON 转 TS',
+    desc: '从 JSON 生成 TypeScript 类型定义',
+    glyph: 'TS',
+    hue: 210,
+    category: 'dev',
+    component: JsonToTs,
+  },
+  {
+    id: 'search',
+    name: '文件搜索',
+    desc: '递归搜索文件名与文件内容',
+    glyph: '🔎',
+    hue: 185,
+    category: 'system',
+    component: FileSearch,
+  },
+  {
+    id: 'chmod',
+    name: 'chmod 权限',
+    desc: '勾选 rwx 生成八进制与符号权限',
+    glyph: '🔓',
+    hue: 45,
+    category: 'system',
+    component: ChmodCalculator,
+  },
+  {
+    id: 'rsa',
+    name: 'RSA 密钥对',
+    desc: '本地生成 PEM 公私钥，RSA / ECDSA',
+    glyph: '🗝️',
+    hue: 265,
+    category: 'dev',
+    component: RsaKeyPair,
+  },
+  {
+    id: 'exif',
+    name: 'EXIF 查看',
+    desc: '查看拍摄信息与 GPS，一键清除',
+    glyph: '📷',
+    hue: 30,
+    category: 'media',
+    component: ExifTool,
+  },
+  {
+    id: 'excel',
+    name: 'Excel 转换',
+    desc: 'xlsx / csv 与 JSON 互转，带预览',
+    glyph: '▤',
+    hue: 135,
+    category: 'text',
+    component: ExcelTool,
+  },
+  {
+    id: 'pdf',
+    name: 'PDF 工具',
+    desc: '合并、拆分页码、图片转 PDF',
+    glyph: '📄',
+    hue: 0,
+    category: 'media',
+    component: PdfTool,
+  },
+  {
+    id: 'diff',
+    name: '文本对比',
+    desc: '逐行 diff，高亮新增与删除',
+    glyph: '±',
+    hue: 95,
+    category: 'text',
+    component: TextDiff,
+  },
+  {
+    id: 'sql-code',
+    name: 'SQL 转代码',
+    desc: '建表语句生成实体、Mapper 与 Vue 页面',
+    glyph: '⌗',
+    hue: 215,
+    category: 'dev',
+    component: SqlToCode,
+  },
+  {
+    id: 'url',
+    name: 'URL 解析',
+    desc: '拆解链接结构，编辑参数与编解码',
+    glyph: '⌁',
+    hue: 190,
+    category: 'encode',
+    component: UrlParser,
+  },
+  {
+    id: 'image-stitch',
+    name: '图片拼接',
+    desc: '多张图片拼成长图，可调间距圆角',
+    glyph: '▥',
+    hue: 285,
+    category: 'media',
+    component: ImageStitcher,
+  },
+  {
+    id: 'favicon',
+    name: '图标生成',
+    desc: '一张图生成 favicon 与 PWA 图标包',
+    glyph: '★',
+    hue: 50,
+    category: 'media',
+    component: FaviconGenerator,
+  },
+  {
+    id: 'qr-design',
+    name: '二维码美化',
+    desc: '自定义颜色圆点与中心 logo',
+    glyph: '▩',
+    hue: 150,
+    category: 'dev',
+    component: QrDesigner,
+  },
+  {
+    id: 'nginx',
+    name: 'Nginx 配置',
+    desc: '反向代理、静态站与 HTTPS 配置生成',
+    glyph: '⚙',
+    hue: 130,
+    category: 'dev',
+    component: NginxGenerator,
+  },
+  {
+    id: 'csv-sql',
+    name: 'CSV 转 SQL',
+    desc: '表格数据生成 INSERT 语句',
+    glyph: '⇥',
+    hue: 175,
+    category: 'dev',
+    component: CsvToSql,
+  },
+  {
+    id: 'cert',
+    name: '证书解析',
+    desc: '查看 PEM 有效期、SAN 与证书链',
+    glyph: '🛡',
+    hue: 205,
+    category: 'dev',
+    component: CertInspector,
   },
   {
     id: 'sysinfo',

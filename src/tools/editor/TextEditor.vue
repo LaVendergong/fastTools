@@ -187,7 +187,24 @@ function detectLang(name) {
   return EXT_LANG[ext] || 'plaintext'
 }
 
-function loadText(content, name, handle) {
+// 选中并滚动到指定行（搜索结果跳转用）
+function selectLine(line) {
+  const ta = taEl.value
+  if (!ta || !line) return
+  const lines = text.value.split('\n')
+  const target = Math.min(Math.max(1, line), lines.length)
+  let start = 0
+  for (let i = 0; i < target - 1; i += 1) start += lines[i].length + 1
+  const end = start + lines[target - 1].length
+  ta.focus()
+  ta.setSelectionRange(start, end)
+  const lh = parseFloat(getComputedStyle(ta).lineHeight) || 20
+  ta.scrollTop = Math.max(0, (target - 6) * lh)
+  syncScroll()
+  updateCursor()
+}
+
+function loadText(content, name, handle, line = 0) {
   skipDirty = true
   text.value = content
   fileName.value = name
@@ -201,6 +218,10 @@ function loadText(content, name, handle) {
     skipDirty = false
     taEl.value?.focus()
     updateCursor()
+    if (line) {
+      selectLine(line)
+      message.value = `已定位到第 ${line} 行`
+    }
   })
 }
 
@@ -478,21 +499,22 @@ const WELCOME = '欢迎使用文本编辑器\n\n• Ctrl / ⌘ + S 保存，Ctrl
 let loadedFromRequest = false
 let offOpenFile = null
 
-function openHandle(handle, name) {
+function openHandle(handle, name, line = 0) {
   handle
     .getFile()
     .then((file) => file.text())
-    .then((content) => loadText(content, name, handle))
+    .then((content) => loadText(content, name, handle, line))
     .catch((e) => {
       message.value = `打开失败：${e.message}`
     })
 }
 
-// 外部请求打开文件（文件管理器双击、系统「用本应用打开」）
-function onOpenFileRequest({ handle, name }) {
+// 外部请求打开文件（文件管理器双击、搜索结果、系统「用本应用打开」）
+function onOpenFileRequest({ handle, name, line = 0 }) {
   loadedFromRequest = true
   pendingFile.handle = null
   pendingFile.name = ''
+  pendingFile.line = 0
 
   // 已绑定磁盘文件的先自动保存，避免每次都弹确认打断；未命名的才询问
   if (dirty.value) {
@@ -503,7 +525,7 @@ function onOpenFileRequest({ handle, name }) {
       return
     }
   }
-  openHandle(handle, name)
+  openHandle(handle, name, line)
 }
 
 onMounted(() => {

@@ -1,5 +1,6 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import JSZip from 'jszip'
 import { requestOpenFile } from '../../lib/appBus'
 import {
   createDir,
@@ -44,6 +45,9 @@ const renaming = ref(null) // { entry, name }
 const preview = ref(null) // { entry, kind, text, url, editing, saved }
 const fileInputEl = ref(null)
 const nameInputEl = ref(null)
+const zipBusy = ref('') // 正在处理的条目名
+const zipProgress = ref(0)
+const notice = ref('')
 
 const currentDir = computed(() =>
   stack.value.length ? stack.value[stack.value.length - 1].handle : rootHandle.value,
@@ -123,6 +127,11 @@ async function updateStorage() {
 
 async function enter(entry) {
   if (entry.kind !== 'dir') {
+    // 压缩包双击直接解压到当前目录
+    if (isZip(entry)) {
+      await unzipEntry(entry)
+      return
+    }
     // 文本文件交给文本编辑器打开（可直接写回原文件）
     if (fileKind(entry) === 'text') {
       requestOpenFile(entry.handle, entry.name)
@@ -264,6 +273,139 @@ async function download(entry) {
     error.value = e.message
   }
 }
+
+/* ---------------- ZIP 打包 / 解压 ---------------- */
+
+async function collectFiles(dirHandle, prefix = '') {
+  const out = []
+  for await (const [name, handle] of dirHandle.entries()) {
+    if (handle.kind === 'file') {
+      out.push({ path: `${prefix}${name}`, handle })
+    } else {
+      out.push(...(await collectFiles(handle, `${prefix}${name}/`)))
+    }
+  }
+  return out
+}
+
+function uniqueName(base, ext = '') {
+  const taken = new Set(entries.value.map((e) => e.name))
+  let name = `${base}${ext}`
+  let i = 1
+  while (taken.has(name)) name = `${base} (${i++})${ext}`
+  return name
+}
+
+async function zipEntry(entry) {
+  menu.value = null
+  if (zipBusy.value) return
+  error.value = ''
+  notice.value = ''
+  zipBusy.value = entry.name
+  zipProgress.value = 0
+
+  try {
+    const zip = new JSZip()
+
+    if (entry.kind === 'dir') {
+      const files = await collectFiles(entry.handle)
+      if (!files.length) {
+        error.value = '这个文件夹是空的，没什么可打包'
+        return
+      }
+      for (const file of files) {
+        const blob = await readFileBlob(file.handle)
+        zip.file(`${entry.name}/${file.path}`, blob)
+      }
+    } else {
+      const blob = await readFileBlob(entry.handle)
+      zip.file(entry.name, blob)
+    }
+
+    const blob = await zip.generateAsync(
+      { type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } },
+      (meta) => {
+        zipProgress.value = Math.round(meta.percent)
+      },
+    )
+
+    const base = entry.kind === 'dir' ? entry.name : entry.name.replace(/\.[^.]+$/, '')
+    const name = uniqueName(base, '.zip')
+    await writeFile(currentDir.value, name, blob)
+    await refresh()
+    notice.value = `已打包 ${name}（${formatSize(blob.size)}）`
+  } catch (e) {
+    error.value = `打包失败：${e.message}`
+  } finally {
+    zipBusy.value = ''
+    zipProgress.value = 0
+  }
+}
+
+async function resolveNestedDir(rootDir, segments) {
+  let dir = rootDir
+  for (const seg of segments) {
+    dir = await dir.getDirectoryHandle(seg, { create: true })
+  }
+  return dir
+}
+
+async function unzipEntry(entry) {
+  menu.value = null
+  if (zipBusy.value) return
+  error.value = ''
+  notice.value = ''
+  zipBusy.value = entry.name
+  zipProgress.value = 0
+
+  try {
+    const blob = await readFileBlob(entry.handle)
+    const zip = await JSZip.loadAsync(blob)
+    const files = Object.values(zip.files).filter((f) => !f.dir)
+
+    if (!files.length) {
+      error.value = '压缩包里没有文件'
+      return
+    }
+
+    const folder = uniqueName(entry.name.replace(/\.zip$/i, ''))
+    const targetDir = await createDir(currentDir.value, folder)
+
+    // 若所有条目都在同一个顶层目录下（如 zip-test/a.txt），剥掉这层，避免解压后多套一层文件夹
+    const segmentsList = files.map((f) => f.name.split('/').filter(Boolean))
+    let prefix = ''
+    if (
+      segmentsList.length &&
+      segmentsList.every((s) => s.length > 1) &&
+      segmentsList.every((s) => s[0] === segmentsList[0][0])
+    ) {
+      prefix = `${segmentsList[0][0]}/`
+    }
+
+    let done = 0
+    for (const file of files) {
+      const rel = file.name.startsWith(prefix) ? file.name.slice(prefix.length) : file.name
+      const segments = rel.split('/').filter(Boolean)
+      const fileName = segments.pop()
+      if (!fileName) continue
+      const dir = await resolveNestedDir(targetDir, segments)
+      const data = await file.async('blob')
+      await writeFile(dir, fileName, data)
+      done += 1
+      zipProgress.value = Math.round((done / files.length) * 100)
+    }
+
+    await refresh()
+    notice.value = `已解压 ${files.length} 个文件到「${folder}」`
+  } catch (e) {
+    error.value = `解压失败：${e.message}`
+  } finally {
+    zipBusy.value = ''
+    zipProgress.value = 0
+  }
+}
+
+const isZip = (entry) => entry.kind === 'file' && /\.zip$/i.test(entry.name)
 
 /* ---------------- 拖拽移动 ---------------- */
 
@@ -417,7 +559,13 @@ onBeforeUnmount(() => {
         <button class="btn" @click="startCreate('dir')">＋ 文件夹</button>
         <button class="btn" @click="startCreate('file')">＋ 文本</button>
         <button class="btn" @click="pickFiles">↑ 上传文件</button>
-        <span v-if="error" class="err">{{ error }}</span>
+
+        <span v-if="zipBusy" class="zip-status">
+          {{ zipBusy }} · {{ zipProgress }}%
+          <i class="zip-bar"><b :style="{ width: zipProgress + '%' }" /></i>
+        </span>
+        <span v-else-if="error" class="err">{{ error }}</span>
+        <span v-else-if="notice" class="notice">{{ notice }}</span>
         <span v-else class="count">{{ visibleEntries.length }} 项</span>
       </div>
 
@@ -525,6 +673,10 @@ onBeforeUnmount(() => {
     <!-- 右键菜单 -->
     <div v-if="menu" class="menu" :style="{ left: menu.x + 'px', top: menu.y + 'px' }">
       <button @click="enter(menu.entry)">{{ menu.entry.kind === 'dir' ? '打开' : '预览' }}</button>
+      <button :disabled="!!zipBusy" @click="zipEntry(menu.entry)">打包为 zip</button>
+      <button v-if="isZip(menu.entry)" :disabled="!!zipBusy" @click="unzipEntry(menu.entry)">
+        解压到当前目录
+      </button>
       <button @click="startRename(menu.entry)">重命名</button>
       <button v-if="menu.entry.kind === 'file'" @click="download(menu.entry)">下载</button>
       <button class="danger" @click="remove(menu.entry)">删除</button>
@@ -745,6 +897,38 @@ onBeforeUnmount(() => {
   margin-left: auto;
   font-size: 11px;
   color: var(--danger);
+}
+.notice {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--success);
+}
+.zip-status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  max-width: 260px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.zip-bar {
+  display: block;
+  width: 54px;
+  height: 4px;
+  border-radius: 99px;
+  background: var(--fill-2);
+  overflow: hidden;
+}
+.zip-bar b {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--accent);
+  transition: width 0.2s ease;
 }
 
 .grid-wrap {

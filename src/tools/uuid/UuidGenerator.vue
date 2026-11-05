@@ -15,6 +15,17 @@ const saved = (() => {
 const count = ref(saved.count ?? 5)
 const upper = ref(saved.upper ?? false)
 const noDash = ref(saved.noDash ?? false)
+const type = ref(saved.type ?? 'v4')
+
+const TYPES = [
+  { id: 'v4', name: 'UUID v4', desc: '完全随机，通用标识', len: 36 },
+  { id: 'v7', name: 'UUID v7', desc: '带时间戳，可排序', len: 36 },
+  { id: 'ulid', name: 'ULID', desc: '26 字符，按时间可排序', len: 26 },
+  { id: 'short', name: '短 ID', desc: '21 字符，类似 nanoid', len: 21 },
+]
+
+const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
+const SHORT_ALPHABET = 'useandom26T198340PX75pxJACKVERYMINDBUSHWOLF_GQZbfghjklqvwyzrict'
 
 function uuidv4() {
   if (typeof crypto.randomUUID === 'function') return crypto.randomUUID()
@@ -25,26 +36,96 @@ function uuidv4() {
   })
 }
 
+// UUID v7：前 48 位是毫秒时间戳，天然按生成顺序排序
+function uuidv7() {
+  const ts = Date.now().toString(16).padStart(12, '0')
+  const rand = crypto.getRandomValues(new Uint8Array(10))
+  const hex = Array.from(rand)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+  const variant = ((parseInt(hex.slice(3, 4), 16) & 0x3) | 0x8).toString(16)
+  return `${ts.slice(0, 8)}-${ts.slice(8, 12)}-7${hex.slice(0, 3)}-${variant}${hex.slice(4, 7)}-${hex.slice(7, 19)}`
+}
+
+// ULID：48 位毫秒时间戳 + 80 位随机数，同一毫秒内递增，保证批量生成也能排序
+let ulidLastMs = 0
+let ulidLastRand = null
+
+function random80() {
+  const bytes = crypto.getRandomValues(new Uint8Array(10))
+  let value = 0n
+  for (const b of bytes) value = (value << 8n) | BigInt(b)
+  return value
+}
+
+function ulid() {
+  const now = Date.now()
+  if (now === ulidLastMs && ulidLastRand !== null) {
+    ulidLastRand = (ulidLastRand + 1n) & ((1n << 80n) - 1n)
+  } else {
+    ulidLastMs = now
+    ulidLastRand = random80()
+  }
+
+  let ts = now
+  let time = ''
+  for (let i = 0; i < 10; i += 1) {
+    time = CROCKFORD[ts % 32] + time
+    ts = Math.floor(ts / 32)
+  }
+
+  let rand = ulidLastRand
+  let out = ''
+  for (let i = 0; i < 16; i += 1) {
+    out = CROCKFORD[Number(rand & 31n)] + out
+    rand >>= 5n
+  }
+  return time + out
+}
+
+function shortId(size = 21) {
+  const bytes = crypto.getRandomValues(new Uint8Array(size))
+  let out = ''
+  for (let i = 0; i < size; i += 1) out += SHORT_ALPHABET[bytes[i] & 63]
+  return out
+}
+
+function makeOne() {
+  if (type.value === 'v7') return uuidv7()
+  if (type.value === 'ulid') return ulid()
+  if (type.value === 'short') return shortId()
+  return uuidv4()
+}
+
 const raw = ref(Array.from({ length: count.value }, uuidv4))
 
 const list = computed(() =>
   raw.value.map((id) => {
+    // ULID / 短 ID 的大写与连字符规则不适用，保持原样
+    if (type.value === 'ulid' || type.value === 'short') return id
     let s = upper.value ? id.toUpperCase() : id
     if (noDash.value) s = s.replace(/-/g, '')
     return s
   }),
 )
 
-watch([count, upper, noDash], () => {
+watch([count, upper, noDash, type], () => {
   localStorage.setItem(
     STORAGE_KEY,
-    JSON.stringify({ count: count.value, upper: upper.value, noDash: noDash.value }),
+    JSON.stringify({
+      count: count.value,
+      upper: upper.value,
+      noDash: noDash.value,
+      type: type.value,
+    }),
   )
 })
 
 function generate() {
-  raw.value = Array.from({ length: count.value }, uuidv4)
+  raw.value = Array.from({ length: count.value }, makeOne)
 }
+
+watch(type, () => generate())
 
 const copiedKey = ref('')
 
@@ -64,13 +145,33 @@ async function copy(value, key) {
 <template>
   <div class="uuid-tool">
     <div class="toolbar">
+      <span class="label">类型</span>
+      <select v-model="type" class="select">
+        <option v-for="t in TYPES" :key="t.id" :value="t.id">{{ t.name }}</option>
+      </select>
+
       <span class="label">数量</span>
       <select v-model.number="count" class="select">
         <option v-for="n in COUNTS" :key="n" :value="n">{{ n }}</option>
       </select>
 
-      <button class="toggle" :class="{ on: upper }" @click="upper = !upper">大写</button>
-      <button class="toggle" :class="{ on: noDash }" @click="noDash = !noDash">无连字符</button>
+      <button
+        v-if="type === 'v4' || type === 'v7'"
+        class="toggle"
+        :class="{ on: upper }"
+        @click="upper = !upper"
+      >
+        大写
+      </button>
+      <button
+        v-if="type === 'v4' || type === 'v7'"
+        class="toggle"
+        :class="{ on: noDash }"
+        @click="noDash = !noDash"
+      >
+        无连字符
+      </button>
+      <span class="type-desc">{{ TYPES.find((t) => t.id === type)?.desc }}</span>
 
       <div class="right">
         <button class="tbtn" @click="generate">重新生成</button>
@@ -82,8 +183,8 @@ async function copy(value, key) {
 
     <div class="panel">
       <div class="panel-head">
-        <span class="panel-title">UUID v4</span>
-        <span class="mini">{{ list.length }} 条 · {{ noDash ? 32 : 36 }} 字符</span>
+        <span class="panel-title">{{ TYPES.find((t) => t.id === type)?.name }}</span>
+        <span class="mini">{{ list.length }} 条 · {{ list[0]?.length || 0 }} 字符</span>
       </div>
       <div class="list">
         <div v-for="(id, i) in list" :key="i" class="row" @click="copy(id, i)">
@@ -118,6 +219,11 @@ async function copy(value, key) {
 .label {
   font-size: 12px;
   color: var(--text-dim);
+}
+.type-desc {
+  font-size: 10px;
+  color: var(--text-faint);
+  white-space: nowrap;
 }
 .select {
   flex: none;

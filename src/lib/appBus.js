@@ -33,12 +33,14 @@ export const appBus = {
 export const pendingFile = {
   handle: null,
   name: '',
+  line: 0,
 }
 
-/** 请求在文本编辑器中打开一个文件句柄 */
-export function requestOpenFile(handle, name) {
+/** 请求在文本编辑器中打开一个文件句柄，line 可选（跳到指定行） */
+export function requestOpenFile(handle, name, line = 0) {
   pendingFile.handle = handle
   pendingFile.name = name
-  appBus.emit('open-file', { handle, name })
+  pendingFile.line = line
+  appBus.emit('open-file', { handle, name, line })
   appBus.emit('open-tool', 'editor')
 }

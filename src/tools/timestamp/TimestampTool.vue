@@ -1,15 +1,10 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { readJSON } from '../../lib/storage'
 
 const STORAGE_KEY = 'toolbox:timestamp'
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const pad = (n, len = 2) => String(n).padStart(len, '0')
 

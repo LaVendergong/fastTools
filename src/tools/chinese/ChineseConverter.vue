@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import * as OpenCC from 'opencc-js'
+import { readJSON } from '../../lib/storage'
 
 const CONFIGS = [
   { id: 'tw', name: '简体 → 繁体（台湾正体）', from: 'cn', to: 'tw' },
@@ -12,13 +13,7 @@ const CONFIGS = [
 
 const STORAGE_KEY = 'toolbox:chinese'
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const direction = ref(saved.direction ?? 'tw')
 const input = ref(saved.input ?? '')

@@ -1,5 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
+import { useCopy } from '../../lib/useCopy'
+const { copied, copy } = useCopy()
 
 const NAMED = {
   '&': 'amp',
@@ -71,7 +73,6 @@ const mode = ref('encode')
 const input = ref('')
 const entityStyle = ref('named') // named | dec | hex
 const encodeNonAscii = ref(false)
-const copied = ref('')
 const message = ref('')
 
 /* ---------------- 编码 / 解码 ---------------- */
@@ -120,18 +121,6 @@ const output = computed(() => {
 
 /* ---------------- 操作 ---------------- */
 
-async function copy(text, tag) {
-  if (!text) return
-  try {
-    await navigator.clipboard.writeText(text)
-    copied.value = tag
-    setTimeout(() => {
-      if (copied.value === tag) copied.value = ''
-    }, 1200)
-  } catch {
-    /* 忽略 */
-  }
-}
 
 function insertEntity(item) {
   input.value += mode.value === 'encode' ? item.char : `&${item.name};`

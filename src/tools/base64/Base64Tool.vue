@@ -1,15 +1,10 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { readJSON } from '../../lib/storage'
 
 const STORAGE_KEY = 'toolbox:base64'
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const mode = ref(saved.mode ?? 'encode')
 const urlSafe = ref(saved.urlSafe ?? false)

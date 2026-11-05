@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { readJSON } from '../../lib/storage'
 
 const props = defineProps({
   category: { type: String, default: 'length' },
@@ -107,13 +108,7 @@ const CATEGORIES = {
   },
 }
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem('toolbox:converter')) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON('toolbox:converter')
 
 const config = computed(() => CATEGORIES[props.category] || CATEGORIES.length)
 const units = computed(() => config.value.units)

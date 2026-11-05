@@ -1,5 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, ref } from 'vue'
+import { useCopy } from '../../lib/useCopy'
+const { copied, copy } = useCopy()
 
 const fileInputEl = ref(null)
 const imageEl = ref(null)
@@ -9,8 +11,6 @@ const imageInfo = ref(null) // { name, width, height, url }
 const colors = ref([])
 const loading = ref(false)
 const error = ref('')
-const copied = ref('')
-
 /* ---------------- 取色算法 ---------------- */
 
 function rgbToHsl(r, g, b) {
@@ -142,17 +142,6 @@ function onCountChange() {
 
 /* ---------------- 操作 ---------------- */
 
-async function copy(text, tag) {
-  try {
-    await navigator.clipboard.writeText(text)
-    copied.value = tag
-    setTimeout(() => {
-      if (copied.value === tag) copied.value = ''
-    }, 1200)
-  } catch {
-    /* 忽略 */
-  }
-}
 
 const cssVariables = computed(() =>
   colors.value.map((c, i) => `  --color-${i + 1}: ${c.hex};`).join('\n'),

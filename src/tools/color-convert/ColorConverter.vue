@@ -1,14 +1,9 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { readJSON } from '../../lib/storage'
 
 const STORAGE_KEY = 'toolbox:color'
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const input = ref(saved.input ?? '#4F8EF7')
 const copiedKey = ref('')

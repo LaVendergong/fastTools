@@ -1,14 +1,9 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { readJSON } from '../../lib/storage'
 
 const STORAGE_KEY = 'toolbox:contrast'
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const bg = ref(saved.bg ?? '#FFFFFF')
 const fg = ref(saved.fg ?? '#4F8EF7')

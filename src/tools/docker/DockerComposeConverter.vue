@@ -1,6 +1,9 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { dump as yamlDump } from 'js-yaml'
+import { readJSON } from '../../lib/storage'
+import { useCopy } from '../../lib/useCopy'
+const { copied, copy } = useCopy()
 
 const SAMPLE = `docker run -d --name my-app \\
   -p 8080:80 -p 8443:443 \\
@@ -13,17 +16,9 @@ const SAMPLE = `docker run -d --name my-app \\
 
 const STORAGE_KEY = 'toolbox:compose'
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const input = ref(saved.input ?? SAMPLE)
-const copied = ref('')
-
 const FLAGS_WITH_VALUE = new Set([
   '--name', '-p', '--publish', '-v', '--volume', '-e', '--env', '--env-file',
   '--network', '--net', '--restart', '--user', '-u', '-w', '--workdir', '--entrypoint',
@@ -378,18 +373,6 @@ const lineCount = computed(() =>
   result.value.yaml ? result.value.yaml.split('\n').length : 0,
 )
 
-async function copy() {
-  if (!result.value.yaml) return
-  try {
-    await navigator.clipboard.writeText(result.value.yaml)
-    copied.value = 'yaml'
-    setTimeout(() => {
-      if (copied.value === 'yaml') copied.value = ''
-    }, 1200)
-  } catch {
-    /* 忽略 */
-  }
-}
 
 function download() {
   if (!result.value.yaml) return

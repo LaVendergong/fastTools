@@ -1,5 +1,8 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
+import { readJSON } from '../../lib/storage'
+import { useCopy } from '../../lib/useCopy'
+const { copied, copy } = useCopy()
 
 const SAMPLE = `id,name,email,age,city
 1,张三,zhangsan@example.com,28,杭州
@@ -8,13 +11,7 @@ const SAMPLE = `id,name,email,age,city
 
 const STORAGE_KEY = 'toolbox:csvsql'
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const input = ref(saved.input ?? SAMPLE)
 const cfg = reactive({
@@ -26,7 +23,6 @@ const cfg = reactive({
   quote: saved.quote ?? true,
 })
 
-const copied = ref('')
 const message = ref('')
 const error = ref('')
 const fileInputEl = ref(null)
@@ -155,16 +151,6 @@ const stats = computed(() => {
 
 /* ---------------- 操作 ---------------- */
 
-async function copy() {
-  if (!sql.value) return
-  try {
-    await navigator.clipboard.writeText(sql.value)
-    copied.value = 'sql'
-    setTimeout(() => (copied.value = ''), 1200)
-  } catch {
-    /* 忽略 */
-  }
-}
 
 function download() {
   if (!sql.value) return

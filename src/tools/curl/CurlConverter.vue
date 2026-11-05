@@ -1,5 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
+import { useCopy } from '../../lib/useCopy'
+const { copied, copy } = useCopy()
 
 const LANGS = [
   { id: 'fetch', name: 'JavaScript fetch' },
@@ -18,8 +20,6 @@ const SAMPLE = `curl 'https://api.example.com/v1/users?page=1&size=10' \\
 
 const input = ref(SAMPLE)
 const lang = ref('fetch')
-const copied = ref('')
-
 /* ---------------- 解析 ---------------- */
 
 const VALUE_FLAGS = new Set([
@@ -372,16 +372,6 @@ const summary = computed(() => {
 
 /* ---------------- 操作 ---------------- */
 
-async function copy() {
-  if (!output.value) return
-  try {
-    await navigator.clipboard.writeText(output.value)
-    copied.value = 'out'
-    setTimeout(() => (copied.value = ''), 1200)
-  } catch {
-    /* 忽略 */
-  }
-}
 
 function clearAll() {
   input.value = ''

@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, reactive, ref, watch, nextTick } from 'vue'
+import { readJSON } from '../../lib/storage'
 
 const STORAGE_KEY = 'toolbox:watermark'
 
@@ -15,13 +16,7 @@ const POSITIONS = [
   { id: 'bottom-right', name: '右下' },
 ]
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const config = reactive({
   text: saved.text ?? '© 我的水印',

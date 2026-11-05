@@ -1,5 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
+import { useCopy } from '../../lib/useCopy'
+const { copied, copy } = useCopy()
 
 const TABS = [
   { id: 'status', name: '状态码' },
@@ -122,8 +124,6 @@ const HEADERS = [
 
 const tab = ref('status')
 const keyword = ref('')
-const copied = ref('')
-
 const source = computed(() => {
   if (tab.value === 'status') return STATUS
   if (tab.value === 'method') return METHODS
@@ -151,17 +151,7 @@ const groups = computed(() => {
 
 const total = computed(() => groups.value.reduce((sum, g) => sum + g.items.length, 0))
 
-async function copy(item) {
-  try {
-    await navigator.clipboard.writeText(item.code)
-    copied.value = item.code
-    setTimeout(() => {
-      if (copied.value === item.code) copied.value = ''
-    }, 1200)
-  } catch {
-    /* 忽略 */
-  }
-}
+
 </script>
 
 <template>

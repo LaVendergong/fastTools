@@ -5,6 +5,7 @@ import ScientificCalculator from './ScientificCalculator.vue'
 import ProgrammerCalculator from './ProgrammerCalculator.vue'
 import DateCalculator from './DateCalculator.vue'
 import UnitConverter from './UnitConverter.vue'
+import { readJSON } from '../../lib/storage'
 
 const GROUPS = [
   {
@@ -30,13 +31,7 @@ const GROUPS = [
   },
 ]
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem('toolbox:calculator:mode')) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON('toolbox:calculator:mode')
 
 const mode = ref(saved.mode ?? 'standard')
 const collapsed = ref(false)

@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { readJSON } from '../../lib/storage'
 
 const STORAGE_KEY = 'toolbox:http'
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']
@@ -32,13 +33,7 @@ const COMMON_HEADERS = [
   { key: 'X-Requested-With', value: 'XMLHttpRequest' },
 ]
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const method = ref(saved.method ?? 'GET')
 const url = ref(saved.url ?? '')

@@ -1,15 +1,10 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { readJSON } from '../../lib/storage'
 
 const STORAGE_KEY = 'toolbox:qrdesign'
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const text = ref(saved.text ?? 'https://github.com/LaVendergong/fastTools')
 const level = ref(saved.level ?? 'M')

@@ -1,5 +1,9 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { readJSON } from '../../lib/storage'
+import { useCopy } from '../../lib/useCopy'
+
+const { copied, copy: copyText } = useCopy()
 
 const SAMPLE = `CREATE TABLE \`sys_user\` (
   \`user_id\` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '用户ID',
@@ -16,20 +20,13 @@ const SAMPLE = `CREATE TABLE \`sys_user\` (
 
 const STORAGE_KEY = 'toolbox:sqlcode'
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const ddl = ref(saved.ddl ?? SAMPLE)
 const pkg = ref(saved.pkg ?? 'com.ruoyi.system.domain')
 const prefix = ref(saved.prefix ?? 'sys_')
 const className = ref(saved.className ?? '')
 const tab = ref('entity')
-const copied = ref('')
 const error = ref('')
 
 /* ---------------- DDL 解析 ---------------- */
@@ -479,15 +476,10 @@ const stats = computed(() => ({
 
 /* ---------------- 操作 ---------------- */
 
-async function copy() {
+// 模板里是 @click="copy"，不带参数，这里包一层取当前代码
+function copy() {
   if (!currentCode.value) return
-  try {
-    await navigator.clipboard.writeText(currentCode.value)
-    copied.value = 'code'
-    setTimeout(() => (copied.value = ''), 1200)
-  } catch {
-    /* 忽略 */
-  }
+  copyText(currentCode.value, 'code')
 }
 
 function download() {

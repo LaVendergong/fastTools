@@ -1,16 +1,11 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { readJSON } from '../../lib/storage'
 
 const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
 const STORAGE_KEY = 'toolbox:totp'
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const secret = ref(saved.secret ?? '')
 const digits = ref(saved.digits ?? 6)

@@ -1,16 +1,11 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { BUILTIN_TRACKS } from './tracks'
+import { readJSON } from '../../lib/storage'
 
 const STORAGE_KEY = 'toolbox:music'
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const tracks = ref(
   BUILTIN_TRACKS.map((t) => ({ ...t, local: false })),

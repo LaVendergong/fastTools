@@ -1,5 +1,7 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
+import { useCopy } from '../../lib/useCopy'
+const { copied, copy } = useCopy()
 
 const ROLES = [
   { id: 'u', name: '所有者', en: 'user', hint: '文件的主人' },
@@ -38,7 +40,6 @@ const bits = reactive({
 const special = reactive({ setuid: false, setgid: false, sticky: false })
 
 const octalInput = ref('')
-const copied = ref('')
 const message = ref('')
 
 function digitOf(role) {
@@ -129,17 +130,7 @@ function toggleAll(role, on) {
   })
 }
 
-async function copy(text, tag) {
-  try {
-    await navigator.clipboard.writeText(text)
-    copied.value = tag
-    setTimeout(() => {
-      if (copied.value === tag) copied.value = ''
-    }, 1200)
-  } catch {
-    /* 忽略 */
-  }
-}
+
 </script>
 
 <template>

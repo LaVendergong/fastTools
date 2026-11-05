@@ -1,5 +1,8 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { readJSON } from '../../lib/storage'
+import { useCopy } from '../../lib/useCopy'
+const { copied, copy } = useCopy()
 
 /* ---------------- MD5（WebCrypto 不支持，手写实现） ---------------- */
 const MD5_S = [
@@ -86,13 +89,7 @@ const ALGOS = [
 ]
 
 const STORAGE_KEY = 'toolbox:hash'
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const mode = ref(saved.mode ?? 'text') // text | file
 const text = ref(saved.text ?? '')
@@ -102,7 +99,6 @@ const computing = ref(false)
 const fileInfo = ref(null) // { name, size }
 const fileBytes = ref(null)
 const expect = ref('')
-const copied = ref('')
 const error = ref('')
 const dragOver = ref(false)
 const fileInputEl = ref(null)
@@ -204,18 +200,6 @@ const matchedAlgos = computed(() => {
 
 /* ---------------- 复制 ---------------- */
 
-async function copy(value, tag) {
-  if (!value) return
-  try {
-    await navigator.clipboard.writeText(value)
-    copied.value = tag
-    setTimeout(() => {
-      if (copied.value === tag) copied.value = ''
-    }, 1200)
-  } catch {
-    /* 剪贴板不可用 */
-  }
-}
 
 function formatSize(bytes) {
   if (!bytes) return '0 B'

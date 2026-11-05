@@ -2,16 +2,13 @@
 import { computed, ref, watch } from 'vue'
 import { GROUPS, PRESETS } from './templates'
 import { formatSize, getOpfsRoot, supportsOpfs, writeFile } from '../files/fs'
+import { readJSON } from '../../lib/storage'
+import { useCopy } from '../../lib/useCopy'
+const { copied, copy } = useCopy()
 
 const STORAGE_KEY = 'toolbox:gitignore'
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const allItems = GROUPS.flatMap((g) => g.items)
 const itemById = (id) => allItems.find((i) => i.id === id)
@@ -20,7 +17,6 @@ const selected = ref(new Set(saved.selected?.length ? saved.selected : PRESETS[0
 const custom = ref(saved.custom ?? '')
 const useComments = ref(saved.useComments ?? true)
 const keyword = ref('')
-const copied = ref('')
 const message = ref('')
 const error = ref('')
 
@@ -129,16 +125,6 @@ function clearAll() {
   setTimeout(() => (message.value = ''), 1500)
 }
 
-async function copy() {
-  if (!output.value) return
-  try {
-    await navigator.clipboard.writeText(output.value)
-    copied.value = 'copy'
-    setTimeout(() => (copied.value = ''), 1200)
-  } catch {
-    /* 忽略 */
-  }
-}
 
 function download() {
   if (!output.value) return

@@ -25,6 +25,28 @@ npm run dev      # 前端开发服务器
 npm run build    # 构建
 ```
 
+## 性能与体积
+
+67 个工具组件全部通过 `defineAsyncComponent` 懒加载：首页只加载启动器与工具元数据，点开某个工具时才拉取它自己的代码块。
+
+| 项 | 改造前 | 现在 |
+|---|---|---|
+| 首屏 JS | 2,234 KB | **100 KB**（gzip 40 KB） |
+| 分包数 | 1 | 82 |
+
+重依赖同样按需加载：`xlsx`（414 KB）、`pdf-lib`（416 KB）、`opencc-js`（1.1 MB）、`jsqr`、`@peculiar/x509` 都只在打开对应工具时下载。
+
+回归检查脚本 `scripts/e2e.mjs` 做两件事：
+
+1. **全量冒烟**：逐个打开 67 个工具，断言内容已渲染、无未捕获异常；
+2. **功能断言**：对关键工具做真实计算校验（Base64、MD5 标准向量、JSON 格式化、IP 网段、Cron、文本对比、JSON 转 TS、URL 解析）。
+
+```bash
+npx @playwright/cli@latest run-code --filename=scripts/e2e.mjs
+```
+
+返回 `{"passed":10,"failed":0,"failures":[],"consoleErrors":[]}`，有失败时 `failures` 里带具体原因。第三方接口加载失败（`net::ERR_*`）不计为回归。
+
 ## 安装为应用（关联 .txt 打开方式）
 
 项目内置了 PWA 清单（`public/manifest.webmanifest`）和最小 Service Worker（`public/sw.js`），声明了对 `.txt / .md / .json / .log / .csv / .html / .css / .js / .xml / .yml / .sql` 等文本类型的文件关联。
@@ -132,10 +154,11 @@ src/
 ## 如何添加自己的工具
 
 1. 在 `src/tools/` 下新建工具目录，放入工具组件（如 `src/tools/json/JsonFormatter.vue`）。
-2. 在 `src/tools/index.js` 的 `tools` 数组中注册一项，并挂上组件：
+2. 在 `src/tools/index.js` 里声明**懒加载**组件，再在 `TOOLS` 数组中注册一项：
 
 ```js
-import JsonFormatter from './json/JsonFormatter.vue'
+// 组件用 defineAsyncComponent 包裹，点开工具时才会下载对应代码块
+const JsonFormatter = lazy(() => import('./json/JsonFormatter.vue'))
 
 {
   id: 'json',
@@ -147,5 +170,15 @@ import JsonFormatter from './json/JsonFormatter.vue'
   component: JsonFormatter, // 工具界面；不填则显示占位工作区
 }
 ```
+
+不要直接 `import X from './x/Y.vue'` 后再挂上去——那会把该工具的代码打进主包，首页会因此变大。
+
+3. 通用逻辑优先复用 `src/lib/`，不要各写一份：
+
+| 模块 | 用途 |
+|---|---|
+| `lib/useCopy.js` | `const { copied, copy } = useCopy()`，统一「复制 + 1.2 秒后复位」 |
+| `lib/storage.js` | `readJSON(key, fallback)` / `writeJSON` / `createWriter`（防抖写） |
+| `lib/format.js` | `formatSize` / `formatDate` / `formatNumber` |
 
 新分类在 `categories` 数组中添加即可，侧边栏与 Dock 会自动更新。

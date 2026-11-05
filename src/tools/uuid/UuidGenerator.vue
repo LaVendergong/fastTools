@@ -1,16 +1,11 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { readJSON } from '../../lib/storage'
 
 const STORAGE_KEY = 'toolbox:uuid'
 const COUNTS = [1, 5, 10, 20, 50, 100]
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const count = ref(saved.count ?? 5)
 const upper = ref(saved.upper ?? false)

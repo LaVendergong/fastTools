@@ -1,5 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
+import { useCopy } from '../../lib/useCopy'
+const { copied, copy } = useCopy()
 
 const TYPES = [
   { id: 'rsa-2048', name: 'RSA 2048', desc: '通用强度，兼容性最好', algo: 'RSA' },
@@ -14,7 +16,6 @@ const generating = ref(false)
 const publicPem = ref('')
 const privatePem = ref('')
 const error = ref('')
-const copied = ref('')
 const elapsed = ref(0)
 
 const current = computed(() => TYPES.find((t) => t.id === type.value))
@@ -73,18 +74,6 @@ function download(content, filename, mime = 'application/x-pem-file') {
   setTimeout(() => URL.revokeObjectURL(url), 3000)
 }
 
-async function copy(text, tag) {
-  if (!text) return
-  try {
-    await navigator.clipboard.writeText(text)
-    copied.value = tag
-    setTimeout(() => {
-      if (copied.value === tag) copied.value = ''
-    }, 1200)
-  } catch {
-    /* 忽略 */
-  }
-}
 
 function clearAll() {
   publicPem.value = ''

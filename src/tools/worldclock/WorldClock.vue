@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { readJSON } from '../../lib/storage'
 
 const STORAGE_KEY = 'toolbox:worldclock'
 
@@ -30,13 +31,7 @@ const CITIES = [
 const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone
 const localCity = CITIES.find((c) => c.tz === localTz)
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const picked = ref(
   saved.picked?.length ? saved.picked : ['beijing', 'tokyo', 'london', 'newyork', 'losangeles'],

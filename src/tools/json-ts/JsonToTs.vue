@@ -1,5 +1,8 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { readJSON } from '../../lib/storage'
+import { useCopy } from '../../lib/useCopy'
+const { copied, copy } = useCopy()
 
 const SAMPLE = `{
   "code": 0,
@@ -30,13 +33,7 @@ const SAMPLE = `{
 
 const STORAGE_KEY = 'toolbox:json2ts'
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const input = ref(saved.input ?? SAMPLE)
 const rootName = ref(saved.rootName ?? 'Root')
@@ -46,7 +43,6 @@ const optionalOnMissing = ref(saved.optionalOnMissing ?? true)
 const outputMode = ref(saved.outputMode ?? 'ts') // ts | schema | go | java | python
 const packageName = ref(saved.packageName ?? 'com.example.domain')
 const error = ref('')
-const copied = ref('')
 const message = ref('')
 
 /* ---------------- 类型推断 ---------------- */
@@ -551,16 +547,6 @@ const stats = computed(() => {
 
 /* ---------------- 操作 ---------------- */
 
-async function copy() {
-  if (!displayText.value) return
-  try {
-    await navigator.clipboard.writeText(displayText.value)
-    copied.value = 'out'
-    setTimeout(() => (copied.value = ''), 1200)
-  } catch {
-    /* 忽略 */
-  }
-}
 
 const MODE_INFO = {
   ts: { label: 'TypeScript', file: 'types.ts', ext: '.ts' },

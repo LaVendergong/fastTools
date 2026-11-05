@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { readJSON } from '../../lib/storage'
 
 const STORAGE_KEY = 'toolbox:password'
 
@@ -9,13 +10,7 @@ const DIGITS = '0123456789'
 const SYMBOLS = '!@#$%^&*()-_=+[]{};:,.?/~'
 const AMBIGUOUS = '0O1lI|`\'"{}[]()/\\'
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const tab = ref('generate')
 

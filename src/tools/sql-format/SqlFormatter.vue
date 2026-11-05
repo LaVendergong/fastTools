@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import { readJSON } from '../../lib/storage'
 
 const STORAGE_KEY = 'toolbox:sql-format'
 
@@ -36,13 +37,7 @@ const KEYWORDS = [
   'PARTITION\u0001BY', 'IS\u0001NOT\u0001NULL', 'IS\u0001NULL', 'NOT\u0001IN', 'NOT\u0001LIKE',
 ]
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const input = ref(saved.input ?? SAMPLE)
 const indentSize = ref(saved.indentSize ?? 2)

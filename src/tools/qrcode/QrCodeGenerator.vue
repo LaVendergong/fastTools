@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue'
 import QRCode from 'qrcode'
+import { readJSON } from '../../lib/storage'
 
 const STORAGE_KEY = 'toolbox:qrcode'
 const SIZES = [128, 192, 256, 320, 384, 512]
@@ -11,13 +12,7 @@ const LEVELS = [
   { value: 'H', label: 'H' },
 ]
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const text = ref(saved.text ?? 'https://example.com')
 const size = ref(saved.size ?? 256)

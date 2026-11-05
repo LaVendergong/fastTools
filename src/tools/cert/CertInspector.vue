@@ -1,5 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { useCopy } from '../../lib/useCopy'
+const { copied, copy } = useCopy()
 
 const SAMPLE_HINT = `-----BEGIN CERTIFICATE-----
 MIID...（粘贴 PEM 格式证书）
@@ -9,7 +11,6 @@ const input = ref('')
 const certs = ref([])
 const error = ref('')
 const loading = ref(false)
-const copied = ref('')
 const dragOver = ref(false)
 const fileInputEl = ref(null)
 
@@ -168,18 +169,6 @@ function onDrop(e) {
 
 /* ---------------- 复制 ---------------- */
 
-async function copy(text, tag) {
-  if (!text) return
-  try {
-    await navigator.clipboard.writeText(text)
-    copied.value = tag
-    setTimeout(() => {
-      if (copied.value === tag) copied.value = ''
-    }, 1200)
-  } catch {
-    /* 忽略 */
-  }
-}
 
 const summaryText = computed(() => {
   const lines = []

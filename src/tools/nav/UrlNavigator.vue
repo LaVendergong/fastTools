@@ -1,16 +1,11 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { BUILTIN_SITES, GROUPS } from './sites'
+import { readJSON } from '../../lib/storage'
 
 const STORAGE_KEY = 'toolbox:nav'
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const custom = ref(Array.isArray(saved.custom) ? saved.custom : [])
 const group = ref('all')

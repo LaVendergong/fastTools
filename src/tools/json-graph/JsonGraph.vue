@@ -1,5 +1,8 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { readJSON } from '../../lib/storage'
+import { useCopy } from '../../lib/useCopy'
+const { copied, copy } = useCopy()
 
 const SAMPLE = `{
   "code": 0,
@@ -27,13 +30,7 @@ const SAMPLE = `{
 
 const STORAGE_KEY = 'toolbox:jsongraph'
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const input = ref(saved.input ?? SAMPLE)
 const error = ref('')
@@ -44,7 +41,6 @@ const tx = ref(24)
 const ty = ref(24)
 const svgEl = ref(null)
 const wrapEl = ref(null)
-const copied = ref('')
 const message = ref('')
 const dragging = ref(false)
 
@@ -250,17 +246,6 @@ function onPointerUp() {
 
 /* ---------------- 导出 / 复制 ---------------- */
 
-async function copy(text, tag) {
-  try {
-    await navigator.clipboard.writeText(text)
-    copied.value = tag
-    setTimeout(() => {
-      if (copied.value === tag) copied.value = ''
-    }, 1200)
-  } catch {
-    /* 忽略 */
-  }
-}
 
 function svgMarkup() {
   const svg = svgEl.value

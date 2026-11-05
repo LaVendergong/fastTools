@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import { readJSON } from '../../lib/storage'
 
 const STORAGE_KEY = 'toolbox:text-batch'
 
@@ -53,13 +54,7 @@ const GROUPS = [
 const ALL_OPS = GROUPS.flatMap((g) => g.ops)
 const defOf = (id) => ALL_OPS.find((o) => o.id === id) || { id, name: id }
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const input = ref(saved.input ?? '')
 const chain = ref(

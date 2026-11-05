@@ -1,72 +1,88 @@
-import { markRaw } from 'vue'
+import { defineAsyncComponent, markRaw } from 'vue'
 import PlaceholderTool from '../layout/ToolView.vue'
-import RegexTester from './regex/RegexTester.vue'
-import JsonFormatter from './json/JsonFormatter.vue'
-import MarkdownNotes from './markdown/MarkdownNotes.vue'
-import SysInfoTool from './sysinfo/SysInfoTool.vue'
-import HttpReference from './http-ref/HttpReference.vue'
-import HtmlEntityTool from './html-entity/HtmlEntityTool.vue'
-import ChineseConverter from './chinese/ChineseConverter.vue'
-import PaletteExtractor from './palette/PaletteExtractor.vue'
-import LoanTool from './loan/LoanTool.vue'
-import Base64Tool from './base64/Base64Tool.vue'
-import HttpClient from './http/HttpClient.vue'
-import UnicodeTool from './unicode/UnicodeTool.vue'
-import TimestampTool from './timestamp/TimestampTool.vue'
-import ColorConverter from './color-convert/ColorConverter.vue'
-import GradientGenerator from './gradient/GradientGenerator.vue'
-import ShadowGenerator from './shadow/ShadowGenerator.vue'
-import ContrastChecker from './contrast/ContrastChecker.vue'
-import UuidGenerator from './uuid/UuidGenerator.vue'
-import QrCodeGenerator from './qrcode/QrCodeGenerator.vue'
-import ImageEditor from './image-editor/ImageEditor.vue'
-import DbClient from './database/DbClient.vue'
-import CalculatorTool from './calculator/CalculatorTool.vue'
-import GraphingTool from './graphing/GraphingTool.vue'
-import CurrencyTool from './currency/CurrencyTool.vue'
-import MusicPlayer from './music/MusicPlayer.vue'
-import FileManager from './files/FileManager.vue'
-import UrlNavigator from './nav/UrlNavigator.vue'
-import TextEditor from './editor/TextEditor.vue'
-import JwtDecoder from './jwt/JwtDecoder.vue'
-import DataConverter from './convert/DataConverter.vue'
-import HashTool from './hash/HashTool.vue'
-import CronBuilder from './cron/CronBuilder.vue'
-import BatchRename from './rename/BatchRename.vue'
-import TextBatchTool from './text-batch/TextBatchTool.vue'
-import JsonQueryTool from './json-query/JsonQueryTool.vue'
-import SqlFormatter from './sql-format/SqlFormatter.vue'
-import PasswordTool from './password/PasswordTool.vue'
-import WorldClock from './worldclock/WorldClock.vue'
-import WatermarkTool from './watermark/WatermarkTool.vue'
-import QrDecoder from './qr-decode/QrDecoder.vue'
-import AesTool from './crypto/AesTool.vue'
-import ApiCatalog from './api-catalog/ApiCatalog.vue'
-import GitignoreGenerator from './gitignore/GitignoreGenerator.vue'
-import CurlConverter from './curl/CurlConverter.vue'
-import HmacTool from './hmac/HmacTool.vue'
-import TotpTool from './totp/TotpTool.vue'
-import SubnetCalculator from './subnet/SubnetCalculator.vue'
-import DevSetupGuide from './devsetup/DevSetupGuide.vue'
-import ImageCompressor from './image-batch/ImageCompressor.vue'
-import DockerComposeConverter from './docker/DockerComposeConverter.vue'
-import JsonGraph from './json-graph/JsonGraph.vue'
-import JsonToTs from './json-ts/JsonToTs.vue'
-import FileSearch from './search/FileSearch.vue'
-import ChmodCalculator from './chmod/ChmodCalculator.vue'
-import RsaKeyPair from './rsa/RsaKeyPair.vue'
-import ExifTool from './exif/ExifTool.vue'
-import ExcelTool from './excel/ExcelTool.vue'
-import PdfTool from './pdf/PdfTool.vue'
-import SqlToCode from './sql-code/SqlToCode.vue'
-import UrlParser from './url/UrlParser.vue'
-import ImageStitcher from './image-stitch/ImageStitcher.vue'
-import FaviconGenerator from './favicon/FaviconGenerator.vue'
-import QrDesigner from './qr-design/QrDesigner.vue'
-import NginxGenerator from './nginx/NginxGenerator.vue'
-import CsvToSql from './csv-sql/CsvToSql.vue'
-import CertInspector from './cert/CertInspector.vue'
-import TextDiff from './diff/TextDiff.vue'
+import ToolLoading from './ToolLoading.vue'
+
+/* ---------------- 工具组件懒加载 ----------------
+ * 之前 67 个组件全是静态 import，打开首页要下载全部代码；
+ * 改成 defineAsyncComponent 后，每个工具单独成块，点开才下载。
+ */
+function lazy(loader) {
+  return defineAsyncComponent({
+    loader,
+    loadingComponent: ToolLoading,
+    delay: 160,
+    timeout: 30000,
+  })
+}
+
+const RegexTester = lazy(() => import('./regex/RegexTester.vue'))
+const JsonFormatter = lazy(() => import('./json/JsonFormatter.vue'))
+const MarkdownNotes = lazy(() => import('./markdown/MarkdownNotes.vue'))
+const SysInfoTool = lazy(() => import('./sysinfo/SysInfoTool.vue'))
+const HttpReference = lazy(() => import('./http-ref/HttpReference.vue'))
+const HtmlEntityTool = lazy(() => import('./html-entity/HtmlEntityTool.vue'))
+const ChineseConverter = lazy(() => import('./chinese/ChineseConverter.vue'))
+const PaletteExtractor = lazy(() => import('./palette/PaletteExtractor.vue'))
+const LoanTool = lazy(() => import('./loan/LoanTool.vue'))
+const Base64Tool = lazy(() => import('./base64/Base64Tool.vue'))
+const HttpClient = lazy(() => import('./http/HttpClient.vue'))
+const UnicodeTool = lazy(() => import('./unicode/UnicodeTool.vue'))
+const TimestampTool = lazy(() => import('./timestamp/TimestampTool.vue'))
+const ColorConverter = lazy(() => import('./color-convert/ColorConverter.vue'))
+const GradientGenerator = lazy(() => import('./gradient/GradientGenerator.vue'))
+const ShadowGenerator = lazy(() => import('./shadow/ShadowGenerator.vue'))
+const ContrastChecker = lazy(() => import('./contrast/ContrastChecker.vue'))
+const UuidGenerator = lazy(() => import('./uuid/UuidGenerator.vue'))
+const QrCodeGenerator = lazy(() => import('./qrcode/QrCodeGenerator.vue'))
+const ImageEditor = lazy(() => import('./image-editor/ImageEditor.vue'))
+const DbClient = lazy(() => import('./database/DbClient.vue'))
+const CalculatorTool = lazy(() => import('./calculator/CalculatorTool.vue'))
+const GraphingTool = lazy(() => import('./graphing/GraphingTool.vue'))
+const CurrencyTool = lazy(() => import('./currency/CurrencyTool.vue'))
+const MusicPlayer = lazy(() => import('./music/MusicPlayer.vue'))
+const FileManager = lazy(() => import('./files/FileManager.vue'))
+const UrlNavigator = lazy(() => import('./nav/UrlNavigator.vue'))
+const TextEditor = lazy(() => import('./editor/TextEditor.vue'))
+const JwtDecoder = lazy(() => import('./jwt/JwtDecoder.vue'))
+const DataConverter = lazy(() => import('./convert/DataConverter.vue'))
+const HashTool = lazy(() => import('./hash/HashTool.vue'))
+const CronBuilder = lazy(() => import('./cron/CronBuilder.vue'))
+const BatchRename = lazy(() => import('./rename/BatchRename.vue'))
+const TextBatchTool = lazy(() => import('./text-batch/TextBatchTool.vue'))
+const JsonQueryTool = lazy(() => import('./json-query/JsonQueryTool.vue'))
+const SqlFormatter = lazy(() => import('./sql-format/SqlFormatter.vue'))
+const PasswordTool = lazy(() => import('./password/PasswordTool.vue'))
+const WorldClock = lazy(() => import('./worldclock/WorldClock.vue'))
+const WatermarkTool = lazy(() => import('./watermark/WatermarkTool.vue'))
+const QrDecoder = lazy(() => import('./qr-decode/QrDecoder.vue'))
+const AesTool = lazy(() => import('./crypto/AesTool.vue'))
+const ApiCatalog = lazy(() => import('./api-catalog/ApiCatalog.vue'))
+const GitignoreGenerator = lazy(() => import('./gitignore/GitignoreGenerator.vue'))
+const CurlConverter = lazy(() => import('./curl/CurlConverter.vue'))
+const HmacTool = lazy(() => import('./hmac/HmacTool.vue'))
+const TotpTool = lazy(() => import('./totp/TotpTool.vue'))
+const SubnetCalculator = lazy(() => import('./subnet/SubnetCalculator.vue'))
+const DevSetupGuide = lazy(() => import('./devsetup/DevSetupGuide.vue'))
+const ImageCompressor = lazy(() => import('./image-batch/ImageCompressor.vue'))
+const DockerComposeConverter = lazy(() => import('./docker/DockerComposeConverter.vue'))
+const JsonGraph = lazy(() => import('./json-graph/JsonGraph.vue'))
+const JsonToTs = lazy(() => import('./json-ts/JsonToTs.vue'))
+const FileSearch = lazy(() => import('./search/FileSearch.vue'))
+const ChmodCalculator = lazy(() => import('./chmod/ChmodCalculator.vue'))
+const RsaKeyPair = lazy(() => import('./rsa/RsaKeyPair.vue'))
+const ExifTool = lazy(() => import('./exif/ExifTool.vue'))
+const ExcelTool = lazy(() => import('./excel/ExcelTool.vue'))
+const PdfTool = lazy(() => import('./pdf/PdfTool.vue'))
+const SqlToCode = lazy(() => import('./sql-code/SqlToCode.vue'))
+const UrlParser = lazy(() => import('./url/UrlParser.vue'))
+const ImageStitcher = lazy(() => import('./image-stitch/ImageStitcher.vue'))
+const FaviconGenerator = lazy(() => import('./favicon/FaviconGenerator.vue'))
+const QrDesigner = lazy(() => import('./qr-design/QrDesigner.vue'))
+const NginxGenerator = lazy(() => import('./nginx/NginxGenerator.vue'))
+const CsvToSql = lazy(() => import('./csv-sql/CsvToSql.vue'))
+const CertInspector = lazy(() => import('./cert/CertInspector.vue'))
+const TextDiff = lazy(() => import('./diff/TextDiff.vue'))
+
 
 /**
  * 工具注册表：新增工具只需往 tools 里加一项。

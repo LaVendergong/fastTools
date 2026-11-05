@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { readJSON } from '../../lib/storage'
 
 const LIMIT = 500
 const STORAGE_KEY = 'toolbox:regex'
@@ -61,13 +62,7 @@ const templateGroups = [
   },
 ]
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const form = reactive({
   source: saved.source ?? '\\d+',

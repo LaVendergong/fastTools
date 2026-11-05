@@ -1,5 +1,8 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import { readJSON } from '../../lib/storage'
+import { useCopy } from '../../lib/useCopy'
+const { copied, copy } = useCopy()
 
 const ALGOS = [
   { id: 'SHA-1', name: 'HMAC-SHA1', jwt: 'HS1' },
@@ -10,13 +13,7 @@ const ALGOS = [
 
 const STORAGE_KEY = 'toolbox:hmac'
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const message = ref(saved.message ?? '')
 const secret = ref(saved.secret ?? '')
@@ -25,7 +22,6 @@ const algo = ref(saved.algo ?? 'SHA-256')
 const outputFormat = ref(saved.outputFormat ?? 'hex')
 const result = ref('')
 const error = ref('')
-const copied = ref('')
 const showSecret = ref(false)
 
 function hexToBytes(hex) {
@@ -91,16 +87,6 @@ watch([message, secret, secretFormat, algo, outputFormat], () => {
   timer = setTimeout(compute, 120)
 })
 
-async function copy() {
-  if (!result.value) return
-  try {
-    await navigator.clipboard.writeText(result.value)
-    copied.value = 'main'
-    setTimeout(() => (copied.value = ''), 1200)
-  } catch {
-    /* 忽略 */
-  }
-}
 
 function clearAll() {
   message.value = ''

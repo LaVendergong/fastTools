@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import { readJSON } from '../../lib/storage'
 
 const STORAGE_KEY = 'toolbox:currency'
 
@@ -67,13 +68,7 @@ const SYMBOLS = {
   AED: 'د.إ',
 }
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const rates = ref({ ...OFFLINE, ...(saved.rates || {}) })
 const updatedAt = ref(saved.updatedAt || 0)

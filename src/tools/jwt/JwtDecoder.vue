@@ -2,6 +2,8 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import hljsCore from 'highlight.js/lib/core'
 import hljsJson from 'highlight.js/lib/languages/json'
+import { useCopy } from '../../lib/useCopy'
+const { copied, copy } = useCopy()
 
 if (!hljsCore.getLanguage('json')) hljsCore.registerLanguage('json', hljsJson)
 
@@ -20,8 +22,6 @@ const TIME_CLAIMS = {
 const token = ref('')
 const secret = ref(SAMPLE_SECRET)
 const verifyState = ref({ checked: false, ok: false, message: '' })
-const copied = ref('')
-
 /* ---------------- 解码 ---------------- */
 
 function b64urlDecode(input) {
@@ -195,17 +195,6 @@ watch([token, secret], () => {
 
 /* ---------------- 复制 ---------------- */
 
-async function copy(text, tag) {
-  try {
-    await navigator.clipboard.writeText(text)
-    copied.value = tag
-    setTimeout(() => {
-      if (copied.value === tag) copied.value = ''
-    }, 1200)
-  } catch {
-    /* 剪贴板不可用 */
-  }
-}
 
 function loadSample() {
   token.value = SAMPLE

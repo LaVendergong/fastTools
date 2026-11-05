@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { readJSON } from '../../lib/storage'
 
 const STORAGE_KEY = 'toolbox:cron'
 
@@ -32,13 +33,7 @@ const TEMPLATES = [
   { name: '每天 9 点与 18 点', expr: '0 9,18 * * *' },
 ]
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 function blankField(key) {
   const meta = FIELDS.find((f) => f.key === key)

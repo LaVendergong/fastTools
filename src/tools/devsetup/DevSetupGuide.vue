@@ -1,16 +1,13 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { PLATFORMS, STACKS, commandOf } from './stacks'
+import { readJSON } from '../../lib/storage'
+import { useCopy } from '../../lib/useCopy'
+const { copied, copy } = useCopy()
 
 const STORAGE_KEY = 'toolbox:devsetup'
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const platform = ref(saved.platform ?? 'win')
 const stack = ref('all')
@@ -18,7 +15,6 @@ const keyword = ref('')
 const installed = ref(new Set(saved.installed ?? []))
 const showScript = ref(false)
 const onlyMissing = ref(true)
-const copied = ref('')
 const message = ref('')
 
 const allTools = STACKS.flatMap((s) => s.tools.map((t) => ({ ...t, stackId: s.id, stackName: s.name })))
@@ -91,18 +87,6 @@ function resetProgress() {
   }, 1600)
 }
 
-async function copy(text, tag) {
-  if (!text) return
-  try {
-    await navigator.clipboard.writeText(text)
-    copied.value = tag
-    setTimeout(() => {
-      if (copied.value === tag) copied.value = ''
-    }, 1200)
-  } catch {
-    /* 忽略 */
-  }
-}
 
 function openSite(tool) {
   window.open(tool.site, '_blank', 'noopener,noreferrer')

@@ -1,8 +1,9 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { useCopy } from '../../lib/useCopy'
+const { copied, copy } = useCopy()
 
 const url = ref('https://user:pass@example.com:8443/api/v1/users?page=1&size=20&q=%E4%B8%AD%E6%96%87#list')
-const copied = ref('')
 const message = ref('')
 const raw = ref('Tom & Jerry <b>"你好"</b> / 100%')
 const encoded = ref('')
@@ -96,18 +97,6 @@ function swapCodec() {
 
 /* ---------------- 复制 ---------------- */
 
-async function copy(text, tag) {
-  if (!text) return
-  try {
-    await navigator.clipboard.writeText(text)
-    copied.value = tag
-    setTimeout(() => {
-      if (copied.value === tag) copied.value = ''
-    }, 1200)
-  } catch {
-    /* 忽略 */
-  }
-}
 
 const rows = computed(() => {
   const p = parsed.value

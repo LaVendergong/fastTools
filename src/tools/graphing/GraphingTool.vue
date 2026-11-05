@@ -1,18 +1,13 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { evaluate } from '../calculator/expr'
+import { readJSON } from '../../lib/storage'
 
 const COLORS = ['#c74440', '#2d70b3', '#388c46', '#6042a6', '#fa7e19', '#000000', '#c7449a', '#0e8a8a']
 const STORAGE_KEY = 'toolbox:graphing'
 const DEFAULT_VIEW = { xMin: -10, xMax: 10, yMin: -6.5, yMax: 6.5 }
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 let seq = 1
 const expressions = ref(

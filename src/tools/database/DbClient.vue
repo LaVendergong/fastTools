@@ -8,6 +8,7 @@ import ErDiagram from './ErDiagram.vue'
 import CreateTableDialog from './CreateTableDialog.vue'
 import AddColumnDialog from './AddColumnDialog.vue'
 import CreateIndexDialog from './CreateIndexDialog.vue'
+import { readJSON } from '../../lib/storage'
 
 const SQL_KEYWORDS = [
   'SELECT', 'FROM', 'WHERE', 'JOIN', 'LEFT', 'RIGHT', 'INNER', 'OUTER', 'ON', 'GROUP', 'BY',
@@ -20,13 +21,7 @@ const SQL_KEYWORDS = [
 
 const STORAGE_KEY = 'toolbox:db:connections'
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const connections = ref(saved.list ?? [])
 const activeId = ref(saved.activeId ?? saved.list?.[0]?.id ?? '')

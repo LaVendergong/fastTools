@@ -1,14 +1,14 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { APIS, CATEGORIES } from './apis'
+import { useCopy } from '../../lib/useCopy'
+const { copied, copy } = useCopy()
 
 const keyword = ref('')
 const cat = ref('all')
 const onlyFree = ref(false)
 const testing = ref('')
 const tryResult = ref(null)
-const copied = ref('')
-
 const list = computed(() => {
   const kw = keyword.value.trim().toLowerCase()
   return APIS.filter((api) => {
@@ -89,17 +89,6 @@ async function tryApi(api) {
   }
 }
 
-async function copy(text, tag) {
-  try {
-    await navigator.clipboard.writeText(text)
-    copied.value = tag
-    setTimeout(() => {
-      if (copied.value === tag) copied.value = ''
-    }, 1200)
-  } catch {
-    /* 忽略 */
-  }
-}
 
 function copyList() {
   const data = list.value.map((a) => ({

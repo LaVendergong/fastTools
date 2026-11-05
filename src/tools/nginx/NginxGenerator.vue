@@ -1,15 +1,12 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
+import { readJSON } from '../../lib/storage'
+import { useCopy } from '../../lib/useCopy'
+const { copied, copy } = useCopy()
 
 const STORAGE_KEY = 'toolbox:nginx'
 
-const saved = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  } catch {
-    return {}
-  }
-})()
+const saved = readJSON(STORAGE_KEY)
 
 const MODES = [
   { id: 'proxy', name: '反向代理', desc: '把请求转发到后端服务' },
@@ -34,8 +31,6 @@ const cfg = reactive({
   bodySize: saved.bodySize ?? '20m',
   timeout: saved.timeout ?? 60,
 })
-
-const copied = ref('')
 
 const upstreamList = computed(() =>
   cfg.upstream
@@ -204,15 +199,6 @@ function serverBody(name) {
   return blocks.join('\n\n')
 }
 
-async function copy() {
-  try {
-    await navigator.clipboard.writeText(config.value)
-    copied.value = 'cfg'
-    setTimeout(() => (copied.value = ''), 1200)
-  } catch {
-    /* 忽略 */
-  }
-}
 
 function download() {
   const blob = new Blob([config.value], { type: 'text/plain;charset=utf-8' })

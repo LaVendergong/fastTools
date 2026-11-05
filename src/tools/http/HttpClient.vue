@@ -1,6 +1,16 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { readJSON } from '../../lib/storage'
+import { formatSize } from '../../lib/format'
+import {
+  buildRequest,
+  buildUrl,
+  CONTENT_TYPES,
+  proxyEndpoint,
+  RAW_TYPES,
+} from './build'
+import { makeResponse, statusClass as statusOf } from './response'
+import { mergeHistory } from './history'
 
 const STORAGE_KEY = 'toolbox:http'
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']
@@ -14,13 +24,7 @@ const BODY_TYPES = [
   { value: 'urlencoded', label: 'x-www-form-urlencoded' },
   { value: 'formdata', label: 'form-data' },
 ]
-const RAW_TYPES = ['json', 'text', 'xml', 'html']
-const CONTENT_TYPES = {
-  json: 'application/json',
-  text: 'text/plain',
-  xml: 'application/xml',
-  html: 'text/html',
-}
+/* 请求体类型常量在 ./build.js */
 
 const COMMON_HEADERS = [
   { key: 'Content-Type', value: 'application/json' },
@@ -66,27 +70,12 @@ const response = ref(null) // { status, statusText, ms, size, headers, body }
 const copied = ref(false)
 
 // URL 查询参数：Params 面板里的行会拼进实际请求地址
-const effectiveUrl = computed(() => {
-  const base = url.value.trim()
-  if (!base) return ''
-  const rows = params.value.filter((p) => p.key.trim())
-  if (!rows.length) return base
-  try {
-    const u = new URL(base)
-    for (const p of rows) u.searchParams.set(p.key.trim(), p.value)
-    return u.toString()
-  } catch {
-    const qs = rows
-      .map((p) => `${encodeURIComponent(p.key.trim())}=${encodeURIComponent(p.value)}`)
-      .join('&')
-    return `${base}${base.includes('?') ? '&' : '?'}${qs}`
-  }
-})
+const effectiveUrl = computed(() => buildUrl(url.value, params.value))
 
 const paramCount = computed(() => params.value.filter((p) => p.key.trim()).length)
 
 function pushHistory(entry) {
-  history.value = [entry, ...history.value.filter((h) => !(h.url === entry.url && h.method === entry.method))].slice(0, 20)
+  history.value = mergeHistory(history.value, entry, 20)
 }
 
 function useHistory(item) {
@@ -153,18 +142,7 @@ function addCommonHeader(h) {
   }
 }
 
-function base64(str) {
-  const bytes = new TextEncoder().encode(str)
-  let bin = ''
-  for (const b of bytes) bin += String.fromCharCode(b)
-  return btoa(bin)
-}
-
-function formatSize(n) {
-  if (n < 1024) return `${n} B`
-  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`
-  return `${(n / 1024 / 1024).toFixed(2)} MB`
-}
+/* base64 / formatSize 已抽到 ./build.js 与 lib/format.js */
 
 async function send() {
   const target = effectiveUrl.value
@@ -175,91 +153,42 @@ async function send() {
   response.value = null
   const started = performance.now()
 
+  // 组装请求与解析响应都交给纯函数模块，这里只负责状态编排
+  const { url: finalUrl, init } = buildRequest({
+    url: target,
+    method: method.value,
+    headers: headers.value,
+    auth: {
+      type: authType.value,
+      token: authToken.value,
+      user: authUser.value,
+      pass: authPass.value,
+      keyName: apiKeyName.value,
+      keyValue: apiKeyValue.value,
+      keyIn: apiKeyIn.value,
+    },
+    hasBody: hasBody.value,
+    bodyType: bodyType.value,
+    body: body.value,
+    formRows: formRows.value,
+  })
+
   try {
-    const headerObj = {}
-    for (const h of headers.value) {
-      if (h.key.trim()) headerObj[h.key.trim()] = h.value
-    }
-
-    const hasHeader = (name) =>
-      Object.keys(headerObj).some((k) => k.toLowerCase() === name.toLowerCase())
-    const setIfAbsent = (name, value) => {
-      if (!hasHeader(name)) headerObj[name] = value
-    }
-
-    // 认证：自动补 Authorization / API Key
-    if (authType.value === 'bearer' && authToken.value.trim()) {
-      setIfAbsent('Authorization', `Bearer ${authToken.value.trim()}`)
-    } else if (authType.value === 'basic' && (authUser.value || authPass.value)) {
-      setIfAbsent('Authorization', `Basic ${base64(`${authUser.value}:${authPass.value}`)}`)
-    } else if (authType.value === 'apikey' && apiKeyIn.value === 'header' && apiKeyName.value.trim()) {
-      setIfAbsent(apiKeyName.value.trim(), apiKeyValue.value)
-    }
-
-    let finalUrl = target
-    if (authType.value === 'apikey' && apiKeyIn.value === 'query' && apiKeyName.value.trim()) {
-      try {
-        const u = new URL(target)
-        u.searchParams.set(apiKeyName.value.trim(), apiKeyValue.value)
-        finalUrl = u.toString()
-      } catch {
-        /* 非法 URL 交给 fetch 报错 */
-      }
-    }
-
-    // 请求体
-    let payload
-    if (hasBody.value && bodyType.value !== 'none') {
-      if (isRaw.value) {
-        payload = body.value
-        setIfAbsent('Content-Type', CONTENT_TYPES[bodyType.value])
-      } else if (bodyType.value === 'urlencoded') {
-        const params = new URLSearchParams()
-        for (const r of formRows.value) if (r.key.trim()) params.append(r.key.trim(), r.value)
-        payload = params
-        setIfAbsent('Content-Type', 'application/x-www-form-urlencoded')
-      } else if (bodyType.value === 'formdata') {
-        const fd = new FormData()
-        for (const r of formRows.value) {
-          if (!r.key.trim()) continue
-          if (r.file) fd.append(r.key.trim(), r.file)
-          else fd.append(r.key.trim(), r.value)
-        }
-        payload = fd
-        // FormData 的 Content-Type 必须由浏览器生成 boundary，这里不设置
-      }
-    }
-
-    const endpoint =
-      canProxy && useProxy.value ? `/__proxy?target=${encodeURIComponent(finalUrl)}` : finalUrl
-    const res = await fetch(endpoint, {
-      method: method.value,
-      headers: headerObj,
-      body: payload,
-    })
-
+    const endpoint = proxyEndpoint(finalUrl, { canProxy, useProxy: useProxy.value })
+    const res = await fetch(endpoint, init)
     const text = await res.text()
+
     const list = []
     res.headers.forEach((value, key) => list.push({ key, value }))
 
-    let pretty = text
-    const type = res.headers.get('content-type') || ''
-    if (type.includes('json') || /^\s*[[{]/.test(text)) {
-      try {
-        pretty = JSON.stringify(JSON.parse(text), null, 2)
-      } catch {
-        pretty = text
-      }
-    }
-
-    response.value = {
+    response.value = makeResponse({
       status: res.status,
       statusText: res.statusText,
       ms: Math.round(performance.now() - started),
-      size: new Blob([text]).size,
+      text,
       headers: list,
-      body: pretty,
-    }
+    })
+
     pushHistory({
       method: method.value,
       url: finalUrl,
@@ -271,7 +200,7 @@ async function send() {
     error.value = e.message
     pushHistory({
       method: method.value,
-      url: finalUrl ?? target,
+      url: finalUrl || target,
       status: 0,
       ms: Math.round(performance.now() - started),
       time: Date.now(),
@@ -281,13 +210,7 @@ async function send() {
   }
 }
 
-const statusClass = computed(() => {
-  const s = response.value?.status ?? 0
-  if (s >= 500) return 'bad'
-  if (s >= 400) return 'warn'
-  if (s >= 300) return 'info'
-  return 'ok'
-})
+const statusClass = computed(() => statusOf(response.value?.status))
 
 async function copyResponse() {
   if (!response.value) return

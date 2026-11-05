@@ -36,6 +36,8 @@ npm run build    # 构建
 
 重依赖同样按需加载：`xlsx`（414 KB）、`pdf-lib`（416 KB）、`opencc-js`（1.1 MB）、`jsqr`、`@peculiar/x509` 都只在打开对应工具时下载。
 
+测试分两层：纯函数单测（`npm test`，秒级，不需要浏览器）和端到端回归（`npm run test:e2e`，需先 `npm run dev`）。
+
 回归检查脚本 `scripts/e2e.mjs` 做两件事：
 
 1. **全量冒烟**：逐个打开 67 个工具，断言内容已渲染、无未捕获异常；
@@ -180,5 +182,20 @@ const JsonFormatter = lazy(() => import('./json/JsonFormatter.vue'))
 | `lib/useCopy.js` | `const { copied, copy } = useCopy()`，统一「复制 + 1.2 秒后复位」 |
 | `lib/storage.js` | `readJSON(key, fallback)` / `writeJSON` / `createWriter`（防抖写） |
 | `lib/format.js` | `formatSize` / `formatDate` / `formatNumber` |
+
+4. 组件只做**状态编排与渲染**，纯逻辑放同目录的 `.js`：
+
+```
+src/tools/http/
+├── HttpClient.vue    界面：ref、事件、模板
+├── build.js          buildRequest / buildUrl / proxyEndpoint（纯函数）
+├── response.js       prettyBody / makeResponse / statusClass
+└── history.js        mergeHistory
+```
+
+判断标准很简单：**不依赖 `ref`、不碰 DOM、同样入参必得同样结果**的，就该放进 `.js`。
+这样它能在 Node 里直接跑断言（如 `commonPrefix` 的 4 组用例），也不需要为了测一个算法去挂载整个组件。
+
+已按此拆分的：`graphing/fitting.js`（最小二乘）、`files/zip.js`（递归收集 / 公共前缀）、`http/{build,response,history}.js`。
 
 新分类在 `categories` 数组中添加即可，侧边栏与 Dock 会自动更新。

@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { evaluate } from '../calculator/expr'
 import { readJSON } from '../../lib/storage'
+import { fitLinear, fitQuadratic, parsePoints, rSquared, tablePoints } from './fitting'
 
 const COLORS = ['#c74440', '#2d70b3', '#388c46', '#6042a6', '#fa7e19', '#000000', '#c7449a', '#0e8a8a']
 const STORAGE_KEY = 'toolbox:graphing'
@@ -81,113 +82,7 @@ function classify(text) {
 }
 
 // 从 "(1,2) (3,4)" 里抽出所有坐标表达式对
-function parsePoints(text) {
-  const out = []
-  const re = /\(\s*([^(),]+?)\s*,\s*([^(),]+?)\s*\)/g
-  let m
-  while ((m = re.exec(text)) !== null) out.push([m[1], m[2]])
-  return out
-}
-
-/* ---------------- 最小二乘拟合 ---------------- */
-
-function solve3(matrix) {
-  const a = matrix.map((row) => [...row])
-  for (let i = 0; i < 3; i++) {
-    let pivot = i
-    for (let j = i + 1; j < 3; j++) {
-      if (Math.abs(a[j][i]) > Math.abs(a[pivot][i])) pivot = j
-    }
-    if (Math.abs(a[pivot][i]) < 1e-12) return null
-    ;[a[i], a[pivot]] = [a[pivot], a[i]]
-    for (let j = i + 1; j < 3; j++) {
-      const f = a[j][i] / a[i][i]
-      for (let k = i; k < 4; k++) a[j][k] -= f * a[i][k]
-    }
-  }
-  const x = [0, 0, 0]
-  for (let i = 2; i >= 0; i--) {
-    let sum = a[i][3]
-    for (let k = i + 1; k < 3; k++) sum -= a[i][k] * x[k]
-    x[i] = sum / a[i][i]
-  }
-  return x
-}
-
-function fitLinear(pts) {
-  const n = pts.length
-  if (n < 2) return null
-  const mx = pts.reduce((s, p) => s + p[0], 0) / n
-  const my = pts.reduce((s, p) => s + p[1], 0) / n
-  let num = 0
-  let den = 0
-  for (const [x, y] of pts) {
-    num += (x - mx) * (y - my)
-    den += (x - mx) ** 2
-  }
-  if (!den) return null
-  const b = num / den
-  const a = my - b * mx
-  return {
-    predict: (x) => a + b * x,
-    label: `ŷ = ${fmt(a)} ${b >= 0 ? '+' : '−'} ${fmt(Math.abs(b))}x`,
-  }
-}
-
-function fitQuadratic(pts) {
-  const n = pts.length
-  if (n < 3) return null
-  let s1 = 0
-  let s2 = 0
-  let s3 = 0
-  let s4 = 0
-  let ty = 0
-  let txy = 0
-  let tx2y = 0
-  for (const [x, y] of pts) {
-    const x2 = x * x
-    s1 += x
-    s2 += x2
-    s3 += x2 * x
-    s4 += x2 * x2
-    ty += y
-    txy += x * y
-    tx2y += x2 * y
-  }
-  const sol = solve3([
-    [n, s1, s2, ty],
-    [s1, s2, s3, txy],
-    [s2, s3, s4, tx2y],
-  ])
-  if (!sol) return null
-  const [a, b, c] = sol
-  return {
-    predict: (x) => a + b * x + c * x * x,
-    label: `ŷ = ${fmt(a)} ${b >= 0 ? '+' : '−'} ${fmt(Math.abs(b))}x ${
-      c >= 0 ? '+' : '−'
-    } ${fmt(Math.abs(c))}x²`,
-  }
-}
-
-function rSquared(pts, predict) {
-  const n = pts.length
-  if (!n) return 0
-  const my = pts.reduce((s, p) => s + p[1], 0) / n
-  let ssRes = 0
-  let ssTot = 0
-  for (const [x, y] of pts) {
-    ssRes += (y - predict(x)) ** 2
-    ssTot += (y - my) ** 2
-  }
-  if (ssTot === 0) return 1
-  return 1 - ssRes / ssTot
-}
-
-function tablePoints(e) {
-  return (e.data || [])
-    .map((row) => [Number(row[0]), Number(row[1])])
-    .filter(([x, y]) => Number.isFinite(x) && Number.isFinite(y))
-}
+/* 拟合与点集解析在 ./fitting.js，这里只保留与画布相关的逻辑 */
 
 // x^2+y^2=25 → (x^2+y^2)-(25)
 function implicitBody(text) {

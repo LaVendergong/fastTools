@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import JSZip from 'jszip'
 import { requestOpenFile } from '../../lib/appBus'
+import { collectFiles, commonPrefix } from './zip'
 import {
   createDir,
   ensurePermission,
@@ -276,17 +277,7 @@ async function download(entry) {
 
 /* ---------------- ZIP 打包 / 解压 ---------------- */
 
-async function collectFiles(dirHandle, prefix = '') {
-  const out = []
-  for await (const [name, handle] of dirHandle.entries()) {
-    if (handle.kind === 'file') {
-      out.push({ path: `${prefix}${name}`, handle })
-    } else {
-      out.push(...(await collectFiles(handle, `${prefix}${name}/`)))
-    }
-  }
-  return out
-}
+/* 递归收集与公共前缀计算在 ./zip.js */
 
 function uniqueName(base, ext = '') {
   const taken = new Set(entries.value.map((e) => e.name))
@@ -372,15 +363,7 @@ async function unzipEntry(entry) {
     const targetDir = await createDir(currentDir.value, folder)
 
     // 若所有条目都在同一个顶层目录下（如 zip-test/a.txt），剥掉这层，避免解压后多套一层文件夹
-    const segmentsList = files.map((f) => f.name.split('/').filter(Boolean))
-    let prefix = ''
-    if (
-      segmentsList.length &&
-      segmentsList.every((s) => s.length > 1) &&
-      segmentsList.every((s) => s[0] === segmentsList[0][0])
-    ) {
-      prefix = `${segmentsList[0][0]}/`
-    }
+    const prefix = commonPrefix(files.map((f) => f.name))
 
     let done = 0
     for (const file of files) {

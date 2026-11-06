@@ -338,6 +338,66 @@ async (page) => {
     )
   }
 
+  // 数据脱敏：默认样例应打码手机号，关掉规则后还原
+  if (await openTool('数据脱敏')) {
+    const before = await page.evaluate(
+      () => document.querySelector('.mask .out')?.textContent || '',
+    )
+    const masked = before.includes('138****5678') && !before.includes('13812345678')
+
+    await page.locator('.mask .chip', { hasText: '手机号' }).click()
+    await page.waitForTimeout(600)
+    const after = await page.evaluate(() => document.querySelector('.mask .out')?.textContent || '')
+
+    check(
+      '脱敏: 手机号打码，关闭规则后还原',
+      masked && after.includes('13812345678'),
+      `${before.slice(0, 60)} | ${after.slice(0, 60)}`,
+    )
+  }
+
+  // 正则速查 → 去测试跳转
+  if (await openTool('正则速查')) {
+    const total = await page.locator('.ref .card').count()
+    await page.locator('.ref .search').fill('手机')
+    await page.waitForTimeout(500)
+    const filtered = await page.locator('.ref .card').count()
+
+    await page.locator('.ref .mini', { hasText: '去测试' }).first().click()
+    await page.waitForTimeout(1800)
+
+    const title = await page.evaluate(() => document.querySelector('.title')?.textContent?.trim() || '')
+    const pattern = await page.evaluate(() => {
+      const input = [...document.querySelectorAll('.content input')].find((i) =>
+        /正则|pattern/i.test(i.placeholder || i.className || ''),
+      )
+      return input ? input.value : ''
+    })
+
+    check(
+      '正则速查: 搜索过滤并能跳到正则测试',
+      total >= 24 && filtered === 1 && title === '正则测试' && pattern === '^1[3-9]\\d{9}$',
+      `共 ${total} / 筛选 ${filtered} / ${title} / ${pattern}`,
+    )
+  }
+
+  // 接口文档：Markdown 结构与字段数
+  if (await openTool('接口文档')) {
+    const md = await page.evaluate(() => document.querySelector('.apidoc .out')?.textContent || '')
+    const stat = await page.evaluate(
+      () => document.querySelector('.apidoc .stat')?.textContent?.trim() || '',
+    )
+
+    check(
+      '接口文档: 生成标题、路径与嵌套字段表',
+      md.includes('## 用户列表') &&
+        md.includes('`GET` /system/user/list') &&
+        md.includes('data.list[].userName') &&
+        /\d+ 个字段/.test(stat),
+      `${stat} | ${md.slice(0, 60)}`,
+    )
+  }
+
   /* ---------------- 汇总 ---------------- */
 
   const failed = results.filter((r) => !r.ok)

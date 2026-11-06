@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { marked } from 'marked'
 import hljsCore from 'highlight.js/lib/core'
@@ -24,6 +24,8 @@ import {
   supportsOpfs,
   writeFile,
 } from '../files/fs'
+import { escapeHtml } from '../../lib/format'
+import { applyTemplate, markdownStats, safeFileName } from './editor.js'
 
 const DIR_NAME = 'notes'
 const STORAGE_KEY = 'toolbox:mdnotes'
@@ -61,12 +63,7 @@ for (const [name, mod] of Object.entries({
   if (!hljsCore.getLanguage(name)) hljsCore.registerLanguage(name, mod)
 }
 
-function escapeHtml(text) {
-  return String(text).replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
-  )
-}
+/* escapeHtml 与模板插入逻辑在 lib/format 与 ./editor.js */
 
 /* ---------------- 状态 ---------------- */
 
@@ -98,12 +95,7 @@ const visibleNotes = computed(() => {
   return [...list].sort((a, b) => (b.mtime || 0) - (a.mtime || 0))
 })
 
-const stats = computed(() => {
-  const text = content.value
-  const words = (text.match(/[\w\u4e00-\u9fa5]+/g) || []).length
-  const lines = text ? text.split('\n').length : 0
-  return { words, chars: text.length, lines }
-})
+const stats = computed(() => markdownStats(content.value))
 
 const tooLarge = computed(() => content.value.length > MAX_HIGHLIGHT)
 
@@ -242,23 +234,16 @@ watch(viewMode, (mode) => {
 
 /* ---------------- 新建 / 删除 / 重命名 ---------------- */
 
-function safeName(text) {
-  return (
-    text
-      .trim()
-      .replace(/[\\/:*?"<>|\n\r]/g, '')
-      .slice(0, 60) || '未命名'
-  )
-}
+/* 文件名清洗在 ./editor.js 的 safeFileName */
 
 async function createNote() {
   if (!dir.value) return
   if (dirty.value) await save()
   const stamp = new Date().toLocaleString('zh-CN', { hour12: false }).replace(/[/:]/g, '-')
   const base = `笔记 ${stamp}`
-  let name = `${safeName(base)}.md`
+  let name = `${safeFileName(base)}.md`
   let i = 1
-  while (notes.value.some((n) => n.name === name)) name = `${safeName(base)}-${i++}.md`
+  while (notes.value.some((n) => n.name === name)) name = `${safeFileName(base)}-${i++}.md`
 
   await writeFile(dir.value, name, `# ${name.replace(/\.md$/, '')}\n\n`)
   await refresh()
@@ -287,7 +272,7 @@ async function removeNote() {
 async function commitRename() {
   if (!activeName.value) return
   const oldName = activeName.value
-  const nextName = `${safeName(titleInput.value)}.md`
+  const nextName = `${safeFileName(titleInput.value)}.md`
   if (nextName === oldName) {
     titleInput.value = oldName.replace(/\.md$/, '')
     return
@@ -315,13 +300,13 @@ async function insert(template, wrapSelection = true) {
   const ta = editorEl.value
   const start = ta?.selectionStart ?? content.value.length
   const end = ta?.selectionEnd ?? start
-  const selected = content.value.slice(start, end)
-  const inserted = template.replace('$1', wrapSelection ? selected || '文本' : '')
-  content.value = content.value.slice(0, start) + inserted + content.value.slice(end)
+
+  const { text, caret } = applyTemplate(content.value, start, end, template, wrapSelection)
+  content.value = text
+
   await nextTick()
   if (ta) {
     ta.focus()
-    const caret = start + inserted.length
     ta.setSelectionRange(caret, caret)
   }
   scheduleHighlight()

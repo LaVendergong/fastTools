@@ -2,9 +2,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
+import { escapeHtml } from '../src/lib/format.js'
 import {
   detectLang,
-  escapeHtml,
   findMatches,
   lineOfOffset,
   lineStartOffset,

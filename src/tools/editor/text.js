@@ -38,12 +38,7 @@ export function detectLang(fileName) {
   return EXT_LANG[ext] || 'plaintext'
 }
 
-export function escapeHtml(input) {
-  return String(input).replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
-  )
-}
+// escapeHtml 统一放在 lib/format（编辑器与 Markdown 预览共用）
 
 /**
  * 找出所有匹配区间。

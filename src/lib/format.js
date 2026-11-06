@@ -33,3 +33,11 @@ export function formatNumber(value, digits = 2) {
   if (!Number.isFinite(num)) return '—'
   return num.toLocaleString('zh-CN', { maximumFractionDigits: digits })
 }
+
+/** 转义 HTML 特殊字符（高亮、预览兜底用） */
+export function escapeHtml(input) {
+  return String(input).replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
+  )
+}

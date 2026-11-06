@@ -15,9 +15,9 @@ import hljsYaml from 'highlight.js/lib/languages/yaml'
 import hljsGo from 'highlight.js/lib/languages/go'
 import hljsRust from 'highlight.js/lib/languages/rust'
 import { appBus, pendingFile } from '../../lib/appBus'
+import { escapeHtml } from '../../lib/format'
 import {
   detectLang,
-  escapeHtml,
   findMatches as searchMatches,
   lineOfOffset,
   lineStartOffset,

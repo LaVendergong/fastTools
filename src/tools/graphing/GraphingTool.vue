@@ -3,6 +3,15 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { evaluate } from '../calculator/expr'
 import { readJSON } from '../../lib/storage'
 import { fitLinear, fitQuadratic, parsePoints, rSquared, tablePoints } from './fitting'
+import {
+  classify,
+  contourSegments,
+  hexToRgb,
+  implicitBody,
+  ineqAlphaMask,
+  ineqBody,
+  sampleField,
+} from './implicit'
 
 const COLORS = ['#c74440', '#2d70b3', '#388c46', '#6042a6', '#fa7e19', '#000000', '#c7449a', '#0e8a8a']
 const STORAGE_KEY = 'toolbox:graphing'
@@ -59,135 +68,26 @@ function varsAt(x, y = 0) {
   return vars
 }
 
-/* ---------------- 表达式分类 ---------------- */
-
-// explicit: y = f(x) / polar: r = f(theta) / implicit: F(x,y) = 0 / ineq: 区域填充 / points: 点集
-function classify(text) {
-  const t = text.trim()
-  if (!t) return 'empty'
-
-  // 点集：(1,2) (3,4)，支持写成 (1,2), (3,4) 或 (1,2);(3,4)
-  if (/^\(/.test(t) && /\)$/.test(t.replace(/[,;\s]+$/, ''))) return 'points'
-
-  const eq = t.indexOf('=')
-  const hasCompare = /[<>]/.test(t)
-
-  if (hasCompare) return 'ineq'
-  if (eq <= 0) return 'explicit'
-
-  const left = t.slice(0, eq).trim()
-  // 左边是单个字母（y / r / 自定义名）才算显式函数，其余按隐函数处理
-  if (/^[a-zA-Zθ]$/.test(left)) return 'explicit'
-  return 'implicit'
-}
-
-// 从 "(1,2) (3,4)" 里抽出所有坐标表达式对
-/* 拟合与点集解析在 ./fitting.js，这里只保留与画布相关的逻辑 */
-
-// x^2+y^2=25 → (x^2+y^2)-(25)
-function implicitBody(text) {
-  const eq = text.indexOf('=')
-  const left = text.slice(0, eq).trim()
-  const right = text.slice(eq + 1).trim()
-  if (!right) throw new Error('等号右边为空')
-  return `(${left})-(${right})`
-}
-
-// y > x^2-4 → { body: '(y)-(x^2-4)', positive: true }（positive 表示填充 F>0 的一侧）
-function ineqBody(text) {
-  const m = /^(.*?)(<=|>=|<|>)(.*)$/.exec(text)
-  if (!m) throw new Error('无法解析不等式')
-  const left = m[1].trim()
-  const op = m[2]
-  const right = m[3].trim()
-  if (!left || !right) throw new Error('不等式两侧不能为空')
-  return {
-    body: `(${left})-(${right})`,
-    positive: op === '>' || op === '>=',
-    strict: op === '<' || op === '>',
-  }
-}
-
-function hexToRgb(hex) {
-  const h = hex.replace('#', '')
-  return [
-    parseInt(h.slice(0, 2), 16),
-    parseInt(h.slice(2, 4), 16),
-    parseInt(h.slice(4, 6), 16),
-  ]
-}
-
 /* ---------------- 隐函数：marching squares ---------------- */
 
-function sampleField(body, w, h, cols, rows) {
-  const values = new Float64Array((cols + 1) * (rows + 1))
-  const stepX = w / cols
-  const stepY = h / rows
-  let firstError = ''
-  let finite = 0
+// 表达式分类、采样、等值线在 ./implicit.js；这里只负责把线段画到画布上
+function strokeContour(ctx, body, cols = 150) {
+  const field = sampleField({
+    w: size.w,
+    h: size.h,
+    cols,
+    rows: Math.max(1, Math.round((cols * size.h) / size.w)),
+    bounds: view,
+    evaluateAt: (wx, wy) => evaluate(body, { vars: varsAt(wx, wy) }),
+  })
 
-  for (let j = 0; j <= rows; j++) {
-    const wy = toWorldY(j * stepY)
-    for (let i = 0; i <= cols; i++) {
-      const wx = toWorldX(i * stepX)
-      let v = NaN
-      try {
-        v = evaluate(body, { vars: varsAt(wx, wy) })
-      } catch (err) {
-        if (!firstError) firstError = err.message
-        v = NaN
-      }
-      if (Number.isFinite(v)) finite += 1
-      values[j * (cols + 1) + i] = Number.isFinite(v) ? v : NaN
-    }
-  }
-  return { values, stepX, stepY, cols, rows, firstError, finite }
-}
-
-function contourPath(field) {
-  const { values, stepX, stepY, cols, rows } = field
-  const at = (i, j) => values[j * (cols + 1) + i]
   const path = new Path2D()
-
-  for (let j = 0; j < rows; j++) {
-    for (let i = 0; i < cols; i++) {
-      const v00 = at(i, j)
-      const v10 = at(i + 1, j)
-      const v01 = at(i, j + 1)
-      const v11 = at(i + 1, j + 1)
-      if (![v00, v10, v01, v11].every(Number.isFinite)) continue
-
-      const pts = []
-      const edge = (a, b, x1, y1, x2, y2) => {
-        if (a === 0 || b === 0) return
-        if ((a < 0 && b > 0) || (a > 0 && b < 0)) {
-          const t = a / (a - b)
-          pts.push([x1 + (x2 - x1) * t, y1 + (y2 - y1) * t])
-        }
-      }
-
-      const x0 = i * stepX
-      const y0 = j * stepY
-      const x1 = (i + 1) * stepX
-      const y1 = (j + 1) * stepY
-
-      edge(v00, v10, x0, y0, x1, y0) // 上
-      edge(v10, v11, x1, y0, x1, y1) // 右
-      edge(v01, v11, x0, y1, x1, y1) // 下
-      edge(v00, v01, x0, y0, x0, y1) // 左
-
-      if (pts.length === 2) {
-        path.moveTo(pts[0][0], pts[0][1])
-        path.lineTo(pts[1][0], pts[1][1])
-      } else if (pts.length === 4) {
-        path.moveTo(pts[0][0], pts[0][1])
-        path.lineTo(pts[1][0], pts[1][1])
-        path.moveTo(pts[2][0], pts[2][1])
-        path.lineTo(pts[3][0], pts[3][1])
-      }
-    }
+  for (const [x1, y1, x2, y2] of contourSegments(field)) {
+    path.moveTo(x1, y1)
+    path.lineTo(x2, y2)
   }
-  return path
+  ctx.stroke(path)
+  return field
 }
 
 /* ---------------- 参数（a = 1 这类定义自动生成滑块） ---------------- */
@@ -414,17 +314,13 @@ function drawCurves(ctx, w, h) {
     if (kind === 'implicit') {
       try {
         const body = implicitBody(e.text)
-        const field = sampleField(body, w, h, 150, Math.round((150 * h) / w))
-        if (!field.finite) {
-          firstError = field.firstError || '无法在该范围内求值'
-        }
-        const path = contourPath(field)
         ctx.save()
         ctx.strokeStyle = e.color
         ctx.lineWidth = 2
         ctx.lineJoin = 'round'
         ctx.lineCap = 'round'
-        ctx.stroke(path)
+        const field = strokeContour(ctx, body)
+        if (!field.finite) firstError = field.firstError || '无法在该范围内求值'
         ctx.restore()
       } catch (err) {
         firstError = err.message
@@ -437,51 +333,47 @@ function drawCurves(ctx, w, h) {
     if (kind === 'ineq') {
       try {
         const parsed = ineqBody(e.text)
-        const field = sampleField(parsed.body, w, h, 120, Math.round((120 * h) / w))
-        if (!field.finite) {
-          firstError = field.firstError || '无法在该范围内求值'
-        }
         const [r, g, b] = hexToRgb(e.color)
 
         // 低分辨率蒙版放大绘制，比逐块 fillRect 快得多
-        const scale = 3
-        const mw = Math.max(1, Math.ceil(w / scale))
-        const mh = Math.max(1, Math.ceil(h / scale))
-        const off = document.createElement('canvas')
-        off.width = mw
-        off.height = mh
-        const octx = off.getContext('2d')
-        const img = octx.createImageData(mw, mh)
+        const mask = ineqAlphaMask({
+          w,
+          h,
+          scale: 3,
+          bounds: view,
+          positive: parsed.positive,
+          evaluateAt: (wx, wy) => evaluate(parsed.body, { vars: varsAt(wx, wy) }),
+        })
 
-        for (let j = 0; j < mh; j++) {
-          const wy = toWorldY(j * scale)
-          for (let i = 0; i < mw; i++) {
-            const wx = toWorldX(i * scale)
-            let v = NaN
-            try {
-              v = evaluate(parsed.body, { vars: varsAt(wx, wy) })
-            } catch {
-              v = NaN
-            }
-            const inside = Number.isFinite(v) && (parsed.positive ? v > 0 : v < 0)
-            const idx = (j * mw + i) * 4
-            img.data[idx] = r
-            img.data[idx + 1] = g
-            img.data[idx + 2] = b
-            img.data[idx + 3] = inside ? 46 : 0
-          }
+        const off = document.createElement('canvas')
+        off.width = mask.width
+        off.height = mask.height
+        const octx = off.getContext('2d')
+        const img = octx.createImageData(mask.width, mask.height)
+
+        for (let k = 0; k < mask.alpha.length; k += 1) {
+          if (!mask.alpha[k]) continue
+          const idx = k * 4
+          img.data[idx] = r
+          img.data[idx + 1] = g
+          img.data[idx + 2] = b
+          img.data[idx + 3] = 46
         }
 
         octx.putImageData(img, 0, 0)
         ctx.save()
         ctx.imageSmoothingEnabled = true
-        ctx.drawImage(off, 0, 0, mw, mh, 0, 0, w, h)
+        ctx.drawImage(off, 0, 0, mask.width, mask.height, 0, 0, w, h)
 
         // 边界线（半透明虚线更符合"不包括边界"的直觉）
         ctx.strokeStyle = e.color
         ctx.lineWidth = parsed.strict ? 1.5 : 2
         if (parsed.strict) ctx.setLineDash([5, 4])
-        ctx.stroke(contourPath(field))
+        ctx.restore()
+
+        ctx.save()
+        const field = strokeContour(ctx, parsed.body, 120)
+        if (!field.finite) firstError = field.firstError || '无法在该范围内求值'
         ctx.restore()
       } catch (err) {
         firstError = err.message

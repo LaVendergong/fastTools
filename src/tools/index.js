@@ -87,6 +87,7 @@ const RegexReference = lazy(() => import('./regex-ref/RegexReference.vue'))
 const ApiDocGenerator = lazy(() => import('./api-doc/ApiDocGenerator.vue'))
 const SshConfigGenerator = lazy(() => import('./ssh/SshConfigGenerator.vue'))
 const GitCommandBuilder = lazy(() => import('./git/GitCommandBuilder.vue'))
+const SchemaValidator = lazy(() => import('./schema/SchemaValidator.vue'))
 
 
 /**
@@ -762,6 +763,15 @@ const rawTools = [
     hue: 25,
     category: 'dev',
     component: GitCommandBuilder,
+  },
+  {
+    id: 'schema-validate',
+    name: 'Schema 校验',
+    desc: '按 JSON Schema 校验数据结构',
+    glyph: '✓',
+    hue: 195,
+    category: 'dev',
+    component: SchemaValidator,
   },
 ]
 

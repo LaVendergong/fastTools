@@ -1,6 +1,6 @@
 # 工具箱 · 前端实用小工具
 
-参考 macOS 桌面风格的前端小工具集合（Vue 3 + Vite），共 72 个工具：正则测试、正则速查、JSON 格式化、接口文档、数据脱敏、Git 命令、SSH 配置、JSON 可视化、JSON 转代码（TS / Go / Java / Python / JSON Schema）、JSON 取值、Markdown 笔记、文本对比、Excel 转换、Base64、URL 解析、Unicode、时间戳、HTML 实体、简繁转换、调色盘、图片取色、图片压缩、图片拼接、图标生成、EXIF 查看、渐变、阴影、对比度、HTTP 请求、HTTP 速查、开放接口、gitignore 生成、cURL 转代码、Docker 转换、HMAC 签名、动态验证码、IPv4 子网、RSA 密钥对、Nginx 配置、证书解析、数据库、ID 生成、二维码、图片编辑、计算器、函数绘图、货币汇率、音乐播放器、PDF 工具、文件管理器、文件搜索、chmod 权限、网址导航、文本编辑器、JWT 解析、格式转换、哈希计算、Cron 生成、批量重命名、文本批处理、SQL 格式化、SQL 转代码、CSV 转 SQL、密码生成、世界时钟、图片加水印、二维码识别、二维码美化、AES 加解密、设备信息、房贷 / 个税、装机指引。
+参考 macOS 桌面风格的前端小工具集合（Vue 3 + Vite），共 73 个工具：正则测试、正则速查、JSON 格式化、接口文档、Schema 校验、数据脱敏、Git 命令、SSH 配置、JSON 可视化、JSON 转代码（TS / Go / Java / Python / JSON Schema）、JSON 取值、Markdown 笔记、文本对比、Excel 转换、Base64、URL 解析、Unicode、时间戳、HTML 实体、简繁转换、调色盘、图片取色、图片压缩、图片拼接、图标生成、EXIF 查看、渐变、阴影、对比度、HTTP 请求、HTTP 速查、开放接口、gitignore 生成、cURL 转代码、Docker 转换、HMAC 签名、动态验证码、IPv4 子网、RSA 密钥对、Nginx 配置、证书解析、数据库、ID 生成、二维码、图片编辑、计算器、函数绘图、货币汇率、音乐播放器、PDF 工具、文件管理器、文件搜索、chmod 权限、网址导航、文本编辑器、JWT 解析、格式转换、哈希计算、Cron 生成、批量重命名、文本批处理、SQL 格式化、SQL 转代码、CSV 转 SQL、密码生成、世界时钟、图片加水印、二维码识别、二维码美化、AES 加解密、设备信息、房贷 / 个税、装机指引。
 
 计算器的转换器包含长度、重量、面积、体积、温度、速度、存储七类单位换算。
 

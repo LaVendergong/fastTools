@@ -41,13 +41,14 @@ npm run build    # 构建
 回归检查脚本 `scripts/e2e.mjs` 做两件事：
 
 1. **全量冒烟**：逐个打开 67 个工具，断言内容已渲染、无未捕获异常；
-2. **功能断言**：对关键工具做真实计算校验（Base64、MD5 标准向量、JSON 格式化、IP 网段、Cron、文本对比、JSON 转 TS、URL 解析）。
+2. **功能断言**：对关键工具做真实计算校验（Base64、MD5 标准向量、JSON 格式化、IP 网段、Cron、文本对比、JSON 转 TS、URL 解析）；
+3. **重构路径**：编辑器查找替换、HTTP 请求、ZIP 打包→解压内容比对、隐函数等值线像素、JSON 节点图结构。
 
 ```bash
 npx @playwright/cli@latest run-code --filename=scripts/e2e.mjs
 ```
 
-返回 `{"passed":10,"failed":0,"failures":[],"consoleErrors":[]}`，有失败时 `failures` 里带具体原因。第三方接口加载失败（`net::ERR_*`）不计为回归。
+返回 `{"passed":15,"failed":0,"failures":[],"consoleErrors":[]}`，有失败时 `failures` 里带具体原因。第三方接口加载失败（`net::ERR_*`）不计为回归；工具首次打开要下载代码块，内容为空时会再等一轮才判定失败。
 
 ## 安装为应用（关联 .txt 打开方式）
 

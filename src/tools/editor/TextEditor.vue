@@ -15,6 +15,15 @@ import hljsYaml from 'highlight.js/lib/languages/yaml'
 import hljsGo from 'highlight.js/lib/languages/go'
 import hljsRust from 'highlight.js/lib/languages/rust'
 import { appBus, pendingFile } from '../../lib/appBus'
+import {
+  detectLang,
+  escapeHtml,
+  findMatches as searchMatches,
+  lineOfOffset,
+  lineStartOffset,
+  nextMatch,
+  replaceAllMatches,
+} from './text.js'
 
 const LANGS = [
   { id: 'plaintext', name: '纯文本' },
@@ -33,33 +42,7 @@ const LANGS = [
   { id: 'rust', name: 'Rust' },
 ]
 
-const EXT_LANG = {
-  js: 'javascript',
-  mjs: 'javascript',
-  cjs: 'javascript',
-  jsx: 'javascript',
-  ts: 'typescript',
-  tsx: 'typescript',
-  json: 'json',
-  html: 'xml',
-  htm: 'xml',
-  xml: 'xml',
-  vue: 'xml',
-  css: 'css',
-  scss: 'css',
-  less: 'css',
-  md: 'markdown',
-  markdown: 'markdown',
-  sql: 'sql',
-  py: 'python',
-  java: 'java',
-  sh: 'bash',
-  bash: 'bash',
-  yml: 'yaml',
-  yaml: 'yaml',
-  go: 'go',
-  rs: 'rust',
-}
+/* 扩展名 → 语言、转义、查找替换等纯逻辑在 ./text.js */
 
 const MAX_HIGHLIGHT = 300 * 1024
 const CLOSE_CONFIRM = '当前内容尚未保存，确定放弃修改？'
@@ -131,13 +114,6 @@ const wordCount = computed(() => {
 })
 const tooLarge = computed(() => text.value.length > MAX_HIGHLIGHT)
 
-function escapeHtml(s) {
-  return String(s).replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
-  )
-}
-
 function computeHighlight() {
   if (lang.value === 'plaintext' || tooLarge.value) {
     highlighted.value = escapeHtml(text.value)
@@ -178,24 +154,16 @@ function updateCursor() {
   const pos = ta.selectionStart
   const before = text.value.slice(0, pos)
   const lastBreak = before.lastIndexOf('\n')
-  cursor.line = before.split('\n').length
+  cursor.line = lineOfOffset(text.value, pos)
   cursor.col = pos - lastBreak
-}
-
-function detectLang(name) {
-  const ext = (name.split('.').pop() || '').toLowerCase()
-  return EXT_LANG[ext] || 'plaintext'
 }
 
 // 选中并滚动到指定行（搜索结果跳转用）
 function selectLine(line) {
   const ta = taEl.value
   if (!ta || !line) return
-  const lines = text.value.split('\n')
-  const target = Math.min(Math.max(1, line), lines.length)
-  let start = 0
-  for (let i = 0; i < target - 1; i += 1) start += lines[i].length + 1
-  const end = start + lines[target - 1].length
+  const { start, length, line: target } = lineStartOffset(text.value, line)
+  const end = start + length
   ta.focus()
   ta.setSelectionRange(start, end)
   const lh = parseFloat(getComputedStyle(ta).lineHeight) || 20
@@ -321,33 +289,10 @@ function onDrop(e) {
 /* ---------------- 查找替换 ---------------- */
 
 function findMatches() {
-  const needle = findText.value
-  if (!needle) return []
-  if (useRegex.value) {
-    try {
-      const re = new RegExp(needle, caseSensitive.value ? 'g' : 'gi')
-      const out = []
-      let m
-      while ((m = re.exec(text.value)) !== null) {
-        out.push({ start: m.index, end: m.index + m[0].length })
-        if (m[0] === '') re.lastIndex++
-        if (out.length > 3000) break
-      }
-      return out
-    } catch {
-      return []
-    }
-  }
-  const hay = caseSensitive.value ? text.value : text.value.toLowerCase()
-  const target = caseSensitive.value ? needle : needle.toLowerCase()
-  const out = []
-  let idx = hay.indexOf(target)
-  while (idx !== -1) {
-    out.push({ start: idx, end: idx + needle.length })
-    idx = hay.indexOf(target, idx + Math.max(1, needle.length))
-    if (out.length > 3000) break
-  }
-  return out
+  return searchMatches(text.value, findText.value, {
+    regex: useRegex.value,
+    caseSensitive: caseSensitive.value,
+  })
 }
 
 watch([findText, useRegex, caseSensitive, text], () => {
@@ -359,7 +304,7 @@ function selectRange(start, end) {
   if (!ta) return
   ta.focus()
   ta.setSelectionRange(start, end)
-  const lineIndex = text.value.slice(0, start).split('\n').length - 1
+  const lineIndex = lineOfOffset(text.value, start) - 1
   const lineHeight = parseFloat(getComputedStyle(ta).lineHeight) || 21
   ta.scrollTop = Math.max(0, (lineIndex - 3) * lineHeight)
   syncScroll()
@@ -367,13 +312,8 @@ function selectRange(start, end) {
 }
 
 function findNext(backward = false) {
-  const matches = findMatches()
-  if (!matches.length) return
-  const ta = taEl.value
-  const pos = ta.selectionEnd
-  const target = backward
-    ? [...matches].reverse().find((m) => m.start < pos) || matches[matches.length - 1]
-    : matches.find((m) => m.start >= pos) || matches[0]
+  const target = nextMatch(findMatches(), taEl.value?.selectionEnd ?? 0, backward)
+  if (!target) return
   selectRange(target.start, target.end)
 }
 
@@ -392,35 +332,29 @@ function replaceAll() {
   if (!findText.value) return
   if (useRegex.value) {
     try {
-      const re = new RegExp(findText.value, caseSensitive.value ? 'g' : 'gi')
-      const before = text.value
-      text.value = before.replace(re, replaceText.value)
-      message.value = text.value === before ? '没有匹配项' : '已全部替换'
-      return
+      const { text: next, count } = replaceAllMatches(text.value, findText.value, replaceText.value, {
+        regex: true,
+        caseSensitive: caseSensitive.value,
+      })
+      text.value = next
+      message.value = count ? `已替换 ${count} 处` : '没有匹配项'
     } catch (e) {
       message.value = e.message
-      return
     }
+    return
   }
-  const matches = findMatches()
-  if (!matches.length) return
-  let out = ''
-  let last = 0
-  for (const m of matches) {
-    out += text.value.slice(last, m.start) + replaceText.value
-    last = m.end
-  }
-  out += text.value.slice(last)
-  text.value = out
-  message.value = `已替换 ${matches.length} 处`
+
+  const { text: next, count } = replaceAllMatches(text.value, findText.value, replaceText.value, {
+    caseSensitive: caseSensitive.value,
+  })
+  if (!count) return
+  text.value = next
+  message.value = `已替换 ${count} 处`
 }
 
 function goToLine() {
-  const target = Math.max(1, Math.min(Number(jumpLine.value) || 1, lineCount.value))
-  const lines = text.value.split('\n')
-  let pos = 0
-  for (let i = 0; i < target - 1; i++) pos += lines[i].length + 1
-  selectRange(pos, pos + (lines[target - 1]?.length || 0))
+  const { start, length } = lineStartOffset(text.value, jumpLine.value || 1)
+  selectRange(start, start + length)
   jumpOpen.value = false
 }
 

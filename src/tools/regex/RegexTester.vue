@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { readJSON } from '../../lib/storage'
+import { pendingRegex } from '../../lib/appBus'
 
 const LIMIT = 500
 const STORAGE_KEY = 'toolbox:regex'
@@ -72,6 +73,17 @@ const form = reactive({
     '订单号 A1024 于 2026-11-02 创建，共 38 件，金额 1299.00 元。\n联系电话 138-0013-8000，邮箱 dev@example.com',
   replacement: saved.replacement ?? '',
 })
+
+// 从「正则速查」带过来的规则优先于上次保存的内容
+if (pendingRegex.source) {
+  form.source = pendingRegex.source
+  form.flags = pendingRegex.flags ?? ''
+  if (pendingRegex.text) form.text = pendingRegex.text
+  pendingRegex.source = ''
+  pendingRegex.flags = ''
+  pendingRegex.text = ''
+  setTimeout(save, 0)
+}
 
 let saveTimer
 function save() {

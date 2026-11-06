@@ -68,7 +68,18 @@ async (page) => {
   await goHome()
 
   const total = await page.locator('.card').count()
-  check('工具卡片数量为 67', total === 67, `实际 ${total}`)
+  // 侧边栏的「全部工具 N」由注册表直接渲染，用它校验卡片数比写死数字更耐改
+  const sidebarTotal = await page.evaluate(() => {
+    const btn = [...document.querySelectorAll('aside button')].find((b) =>
+      b.textContent.includes('全部工具'),
+    )
+    return Number((btn?.textContent || '').replace(/\D/g, '')) || 0
+  })
+  check(
+    '侧边栏计数与卡片数一致',
+    sidebarTotal === total && total > 60,
+    `侧边栏 ${sidebarTotal} / 卡片 ${total}`,
+  )
 
   const broken = []
   for (let i = 0; i < total; i += 1) {

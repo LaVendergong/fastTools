@@ -82,6 +82,9 @@ const NginxGenerator = lazy(() => import('./nginx/NginxGenerator.vue'))
 const CsvToSql = lazy(() => import('./csv-sql/CsvToSql.vue'))
 const CertInspector = lazy(() => import('./cert/CertInspector.vue'))
 const TextDiff = lazy(() => import('./diff/TextDiff.vue'))
+const DataMask = lazy(() => import('./mask/DataMask.vue'))
+const RegexReference = lazy(() => import('./regex-ref/RegexReference.vue'))
+const ApiDocGenerator = lazy(() => import('./api-doc/ApiDocGenerator.vue'))
 
 
 /**
@@ -712,6 +715,33 @@ const rawTools = [
     hue: 100,
     category: 'daily',
     component: LoanTool,
+  },
+  {
+    id: 'mask',
+    name: '数据脱敏',
+    desc: '手机号、身份证、邮箱批量打码',
+    glyph: '◍',
+    hue: 340,
+    category: 'text',
+    component: DataMask,
+  },
+  {
+    id: 'regex-ref',
+    name: '正则速查',
+    desc: '常用正则清单，可一键去测试',
+    glyph: '⌘',
+    hue: 275,
+    category: 'dev',
+    component: RegexReference,
+  },
+  {
+    id: 'api-doc',
+    name: '接口文档',
+    desc: '从 JSON 生成 Markdown 字段表',
+    glyph: '≡',
+    hue: 220,
+    category: 'dev',
+    component: ApiDocGenerator,
   },
 ]
 

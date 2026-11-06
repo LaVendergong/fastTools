@@ -36,6 +36,21 @@ export const pendingFile = {
   line: 0,
 }
 
+// 待测试的正则（正则速查点「去测试」时写入）
+export const pendingRegex = {
+  source: '',
+  flags: '',
+  text: '',
+}
+
+/** 请求在正则测试工具里打开一条规则 */
+export function requestTestRegex(source, flags = '', text = '') {
+  pendingRegex.source = source
+  pendingRegex.flags = flags
+  pendingRegex.text = text
+  appBus.emit('open-tool', 'regex')
+}
+
 /** 请求在文本编辑器中打开一个文件句柄，line 可选（跳到指定行） */
 export function requestOpenFile(handle, name, line = 0) {
   pendingFile.handle = handle

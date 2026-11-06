@@ -15,6 +15,7 @@ import {
 import { fitLinear, fitQuadratic, rSquared } from '../src/tools/graphing/fitting.js'
 import { buildRequest, buildUrl, proxyEndpoint, utf8ToBase64, withQueryParam } from '../src/tools/http/build.js'
 import { mergeHistory } from '../src/tools/http/history.js'
+import { buildTree, edgePath, labelOf, layoutTree } from '../src/tools/json-graph/layout.js'
 import { prettyBody, statusClass } from '../src/tools/http/response.js'
 
 /* ---------------- 压缩包公共前缀 ---------------- */
@@ -314,4 +315,100 @@ test('extractZipInto: 空压缩包抛出 EMPTY_ZIP', async () => {
     () => extractZipInto({}, blob),
     (e) => e.message === EMPTY_ZIP,
   )
+})
+
+/* ---------------- JSON 节点图布局 ---------------- */
+
+const SAMPLE_JSON = {
+  code: 0,
+  message: 'ok',
+  data: {
+    total: 2,
+    list: [
+      { id: 1, name: 'a' },
+      { id: 2, name: 'b' },
+    ],
+  },
+}
+
+test("buildTree: 递归建树，id 用路径表示", () => {
+  const root = buildTree(SAMPLE_JSON, "$", "")
+  assert.equal(root.id, "$")
+  assert.equal(root.type, "object")
+  assert.equal(root.size, 3)
+  assert.deepEqual(
+    root.children.map((c) => c.id),
+    ["code", "message", "data"],
+  )
+  const list = root.children[2].children[1]
+  assert.equal(list.id, "data.list")
+  assert.equal(list.type, "array")
+  assert.equal(list.size, 2)
+  assert.equal(list.children[0].id, "data.list.0")
+})
+
+test("labelOf: 对象/数组带数量，字符串超长省略", () => {
+  const root = buildTree(SAMPLE_JSON, "$", "")
+  assert.equal(labelOf(root.children[0]), "code: 0")
+  assert.equal(labelOf(root.children[2]), "data  {2}")
+  // 标签用的是节点的 key（路径最后一段），不是完整路径
+  assert.equal(labelOf(root.children[2].children[1]), "list  [2]")
+
+  const longNode = buildTree("x".repeat(40), "k", "")
+  assert.equal(labelOf(longNode), `k: "${"x".repeat(26)}…"`)
+  assert.equal(labelOf(buildTree(null, "n", "")), "n: null")
+})
+
+test("layoutTree: 节点数正确、边数为节点数减一", () => {
+  const root = buildTree(SAMPLE_JSON, "$", "")
+  const { nodes, edges } = layoutTree(root)
+  assert.equal(nodes.length, 12)
+  assert.equal(edges.length, 11)
+  assert.ok(edges.every((e) => e.from && e.to))
+})
+
+test("layoutTree: 叶子等距排布，父节点取首尾子节点中点", () => {
+  const root = buildTree(SAMPLE_JSON, "$", "")
+  const { nodes } = layoutTree(root)
+  const dataEntry = nodes.find((n) => n.node.id === "data")
+  const listEntry = nodes.find((n) => n.node.id === "data.list")
+  // 只取数组的两个元素节点，不含它们的子节点
+  const items = nodes.filter((n) => /^data\.list\.\d$/.test(n.node.id))
+
+  assert.equal(dataEntry.depth, 1)
+  assert.equal(listEntry.depth, 2)
+  assert.ok(listEntry.x > dataEntry.x)
+  assert.equal(items.length, 2)
+
+  // 父节点的 y 是自己首尾子节点的中点
+  assert.equal(listEntry.y, (items[0].y + items[1].y) / 2)
+
+  // 所有叶子按行距 ROW 依次排布
+  const leaves = nodes.filter((n) => !n.node.children.length).sort((a, b) => a.y - b.y)
+  for (let i = 1; i < leaves.length; i += 1) {
+    assert.equal(leaves[i].y - leaves[i - 1].y, 34)
+  }
+})
+
+test("layoutTree: 折叠后子树不参与布局", () => {
+  const root = buildTree(SAMPLE_JSON, "$", "")
+  const { nodes } = layoutTree(root, new Set(["data"]))
+  assert.deepEqual(
+    nodes.map((n) => n.node.id).sort(),
+    ["$", "code", "data", "message"],
+  )
+})
+
+test("layoutTree: 空树返回零尺寸", () => {
+  const empty = layoutTree(null)
+  assert.equal(empty.nodes.length, 0)
+  assert.equal(empty.width, 0)
+})
+
+test("edgePath: 生成贝塞尔路径", () => {
+  const path = edgePath({
+    from: { x: 0, y: 0, w: 100 },
+    to: { x: 190, y: 34 },
+  })
+  assert.match(path, /^M 100 12 C /)
 })

@@ -2,6 +2,8 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { readJSON } from '../../lib/storage'
 import { useCopy } from '../../lib/useCopy'
+import { buildTree, edgePath, labelOf, layoutTree, NODE_H } from './layout.js'
+
 const { copied, copy } = useCopy()
 
 const SAMPLE = `{
@@ -44,41 +46,9 @@ const wrapEl = ref(null)
 const message = ref('')
 const dragging = ref(false)
 
-const ROW = 34
-const COL = 190
-const NODE_H = 24
-
 /* ---------------- 解析 ---------------- */
 
-function typeOf(value) {
-  if (value === null) return 'null'
-  if (Array.isArray(value)) return 'array'
-  return typeof value
-}
-
-function buildTree(value, key, path) {
-  const type = typeOf(value)
-  const node = {
-    id: path || '$',
-    key,
-    path: path || '$',
-    type,
-    value,
-    children: [],
-    size: 0,
-  }
-  if (type === 'object' || type === 'array') {
-    const entries =
-      type === 'array'
-        ? value.map((v, i) => [i, v])
-        : Object.entries(value)
-    node.size = entries.length
-    node.children = entries.map(([k, v]) =>
-      buildTree(v, k, path ? `${path}.${k}` : String(k)),
-    )
-  }
-  return node
-}
+// 建树与布局在 ./layout.js
 
 function parse() {
   error.value = ''
@@ -94,78 +64,13 @@ function parse() {
 
 /* ---------------- 布局 ---------------- */
 
-function labelOf(node) {
-  if (node.type === 'object') return `${node.key}  {${node.size}}`
-  if (node.type === 'array') return `${node.key}  [${node.size}]`
-  const text = fmtValue(node.value, node.type)
-  return `${node.key}: ${text}`
-}
-
-function fmtValue(value, type) {
-  if (type === 'string') return `"${value.length > 26 ? `${value.slice(0, 26)}…` : value}"`
-  if (type === 'null') return 'null'
-  return String(value)
-}
-
-function widthOf(node) {
-  const len = labelOf(node).length
-  return Math.min(176, Math.max(62, len * 6.6 + 20))
-}
-
-const layout = computed(() => {
-  const nodes = []
-  const edges = []
-  if (!root.value) return { nodes, edges, width: 0, height: 0 }
-
-  let cursor = 0
-
-  const visibleChildren = (node) =>
-    collapsed.value.has(node.id) ? [] : node.children
-
-  const walk = (node, depth, parent) => {
-    const x = depth * COL
-    const children = visibleChildren(node)
-    const w = widthOf(node)
-
-    const entry = { node, x, y: 0, w, depth }
-    nodes.push(entry)
-
-    if (parent) {
-      edges.push({ from: parent, to: entry, id: `${parent.node.id}->${node.id}` })
-    }
-
-    if (!children.length) {
-      entry.y = cursor * ROW
-      cursor += 1
-    } else {
-      const childEntries = children.map((c) => walk(c, depth + 1, entry))
-      entry.y = (childEntries[0].y + childEntries[childEntries.length - 1].y) / 2
-    }
-    return entry
-  }
-
-  walk(root.value, 0, null)
-
-  const maxX = Math.max(...nodes.map((n) => n.x + n.w), 0)
-  const maxY = Math.max(...nodes.map((n) => n.y), 0)
-
-  return { nodes, edges, width: maxX + 80, height: maxY + 60 }
-})
+const layout = computed(() => layoutTree(root.value, collapsed.value))
 
 // 画布视口 = 容器像素尺寸，这样 1:1 缩放时文字是真实大小
 const viewW = ref(820)
 const viewH = ref(560)
 
 const viewBox = computed(() => `0 0 ${viewW.value} ${viewH.value}`)
-
-function edgePath(edge) {
-  const x1 = edge.from.x + edge.from.w
-  const y1 = edge.from.y + NODE_H / 2
-  const x2 = edge.to.x
-  const y2 = edge.to.y + NODE_H / 2
-  const dx = Math.max(24, (x2 - x1) * 0.45)
-  return `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`
-}
 
 /* ---------------- 交互 ---------------- */
 

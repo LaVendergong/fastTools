@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test tests/pure.test.mjs tests/graphing.test.mjs tests/editor.test.mjs tests/markdown.test.mjs tests/mask.test.mjs tests/regex-ref.test.mjs tests/apidoc.test.mjs",
+    "test": "node --test tests/pure.test.mjs tests/graphing.test.mjs tests/editor.test.mjs tests/markdown.test.mjs tests/mask.test.mjs tests/regex-ref.test.mjs tests/apidoc.test.mjs tests/ssh.test.mjs tests/git.test.mjs",
     "test:e2e": "playwright-cli run-code --filename=scripts/e2e.mjs"
   },
   "dependencies": {

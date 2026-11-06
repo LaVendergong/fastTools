@@ -85,6 +85,8 @@ const TextDiff = lazy(() => import('./diff/TextDiff.vue'))
 const DataMask = lazy(() => import('./mask/DataMask.vue'))
 const RegexReference = lazy(() => import('./regex-ref/RegexReference.vue'))
 const ApiDocGenerator = lazy(() => import('./api-doc/ApiDocGenerator.vue'))
+const SshConfigGenerator = lazy(() => import('./ssh/SshConfigGenerator.vue'))
+const GitCommandBuilder = lazy(() => import('./git/GitCommandBuilder.vue'))
 
 
 /**
@@ -742,6 +744,24 @@ const rawTools = [
     hue: 220,
     category: 'dev',
     component: ApiDocGenerator,
+  },
+  {
+    id: 'ssh',
+    name: 'SSH 配置',
+    desc: '多主机与跳板机生成 ssh config',
+    glyph: '⌸',
+    hue: 165,
+    category: 'system',
+    component: SshConfigGenerator,
+  },
+  {
+    id: 'git-cmd',
+    name: 'Git 命令',
+    desc: '按场景拼出撤销、合并、排查命令',
+    glyph: '⎇',
+    hue: 25,
+    category: 'dev',
+    component: GitCommandBuilder,
   },
 ]
 

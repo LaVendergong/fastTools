@@ -49,7 +49,7 @@ npm run build    # 构建
 npx @playwright/cli@latest run-code --filename=scripts/e2e.mjs
 ```
 
-返回 `{"passed":18,"failed":0,"failures":[],"consoleErrors":[]}`，有失败时 `failures` 里带具体原因。第三方接口加载失败（`net::ERR_*`）不计为回归；工具首次打开要下载代码块，内容为空时会再等一轮才判定失败。
+返回 `{"passed":21,"failed":0,"failures":[],"consoleErrors":[]}`，有失败时 `failures` 里带具体原因。第三方接口加载失败（`net::ERR_*`）不计为回归；工具首次打开要下载代码块，内容为空时会再等一轮才判定失败。
 
 ## 安装为应用（关联 .txt 打开方式）
 

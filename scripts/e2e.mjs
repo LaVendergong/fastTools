@@ -30,7 +30,20 @@ async (page) => {
         .find((b) => b.textContent.includes('全部工具'))
         ?.click()
     })
-    await page.waitForTimeout(600)
+    // 卡片有入场动画：等渲染数量追平侧边栏计数，避免点到动画中的卡片
+    await page
+      .waitForFunction(
+        () => {
+          const btn = [...document.querySelectorAll('aside button')].find((b) =>
+            b.textContent.includes('全部工具'),
+          )
+          const total = Number((btn?.textContent || '').replace(/\D/g, '')) || 0
+          return total > 0 && document.querySelectorAll('.card').length === total
+        },
+        { timeout: 8000 },
+      )
+      .catch(() => {})
+    await page.waitForTimeout(250)
   }
 
   const openTool = async (name) => {
@@ -38,7 +51,14 @@ async (page) => {
     const card = page.locator('.card', { hasText: name }).first()
     if (!(await card.count())) return false
     await card.click()
-    await page.waitForTimeout(900)
+    // 窗口标题出现才说明工具真的打开了
+    await page.locator('.title').first().waitFor({ timeout: 5000 }).catch(() => {})
+    // 懒加载占位层会挡住后续点击，先等它消失
+    await page
+      .locator('.tool-loading')
+      .waitFor({ state: 'detached', timeout: 6000 })
+      .catch(() => {})
+    await page.waitForTimeout(700)
     return true
   }
 
@@ -210,10 +230,12 @@ async (page) => {
   // 文本编辑器：查找 + 全部替换（text.js）
   if (await openTool('文本编辑器')) {
     const ta = page.locator('.content textarea').first()
+    await ta.waitFor({ timeout: 6000 })
     await ta.fill('alpha\nbeta alpha\ngamma')
     await page.waitForTimeout(300)
     await page.locator('.content button', { hasText: '查找' }).first().click()
-    await page.waitForTimeout(400)
+    // 查找栏是点开后动态插入的，等它出现再填
+    await page.locator('input[placeholder="查找内容"]').waitFor({ timeout: 5000 })
     await page.locator('input[placeholder="查找内容"]').fill('alpha')
     await page.waitForTimeout(500)
     await page.locator('.content button', { hasText: '显示替换' }).click()
@@ -395,6 +417,83 @@ async (page) => {
         md.includes('data.list[].userName') &&
         /\d+ 个字段/.test(stat),
       `${stat} | ${md.slice(0, 60)}`,
+    )
+  }
+
+  // Schema 校验：默认通过，改坏数据后能定位到具体字段
+  if (await openTool('Schema 校验')) {
+    const passed = await page.evaluate(
+      () => document.querySelector('.schema .stat')?.textContent?.trim() || '',
+    )
+
+    await page.locator('.schema textarea').nth(1).fill(
+      JSON.stringify({
+        code: -1,
+        data: { total: 1, list: [{ id: 1, role: 'guest', extra: true }] },
+      }),
+    )
+    await page.waitForTimeout(800)
+
+    const errors = await page.evaluate(() =>
+      [...document.querySelectorAll('.schema .error-row')].map((row) => ({
+        path: row.querySelector('.path')?.textContent?.trim(),
+        msg: row.querySelector('.msg')?.textContent?.trim() || '',
+      })),
+    )
+    const paths = errors.map((e) => e.path)
+
+    check(
+      'Schema: 通过 → 改坏后定位到 4 个字段',
+      passed.includes('校验通过') &&
+        errors.length === 4 &&
+        paths.includes('$.code') &&
+        paths.includes('$.data.list[0]') &&
+        paths.includes('$.data.list[0].extra'),
+      `${passed} | ${paths.join(',')}`,
+    )
+  }
+
+  // SSH 配置：多主机拼出 config
+  if (await openTool('SSH 配置')) {
+    const text = await page.evaluate(() => document.querySelector('.ssh .out')?.textContent || '')
+    check(
+      'SSH: 生成全局段与主机块',
+      text.includes('Host *') &&
+        text.includes('Host prod') &&
+        text.includes('HostName 10.0.0.10') &&
+        text.includes('LocalForward 3306'),
+      text.slice(0, 100),
+    )
+  }
+
+  // Git 命令：场景切换、参数替换与风险提示
+  if (await openTool('Git 命令')) {
+    const scenes = await page.locator('.gitcmd .scene').count()
+    const firstCmd = await page.evaluate(
+      () => document.querySelector('.gitcmd .cmd')?.textContent?.trim() || '',
+    )
+
+    await page.locator('.gitcmd .scene', { hasText: '丢弃工作区改动' }).click()
+    await page.waitForTimeout(500)
+    const danger = await page.evaluate(() => ({
+      warn: !!document.querySelector('.gitcmd .warn-bar'),
+      cmd: document.querySelector('.gitcmd .cmd')?.textContent?.trim() || '',
+    }))
+
+    await page.locator('.gitcmd .input').first().fill('src/app.vue')
+    await page.waitForTimeout(400)
+    const filled = await page.evaluate(
+      () => document.querySelector('.gitcmd .cmd')?.textContent?.trim() || '',
+    )
+
+    check(
+      'Git 命令: 场景切换、占位符与参数替换',
+      scenes >= 12 &&
+        firstCmd === 'git reset --soft HEAD~1' &&
+        danger.warn &&
+        danger.cmd === 'git restore <文件>' &&
+        filled === 'git restore src/app.vue',
+      `${scenes} 场景 | ${firstCmd} | ${danger.cmd} | ${filled}`,
     )
   }
 

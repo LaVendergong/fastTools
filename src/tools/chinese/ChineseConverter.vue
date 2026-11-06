@@ -1,6 +1,5 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
-import * as OpenCC from 'opencc-js'
 import { readJSON } from '../../lib/storage'
 
 const CONFIGS = [
@@ -26,23 +25,47 @@ const SAMPLE = `轻量级前端工具箱，支持简体与繁体互转。
 
 const converters = new Map()
 
-function getConverter(id) {
-  if (!converters.has(id)) {
-    const config = CONFIGS.find((c) => c.id === id) || CONFIGS[0]
-    converters.set(id, OpenCC.Converter({ from: config.from, to: config.to }))
-  }
-  return converters.get(id)
+/**
+ * 按方向挑最小的词库包（体积差 10 倍）：
+ * 繁→简只要 t2cn（106 KB）；简→繁需要 cn2t（1.0 MB）；繁体内部转换才用完整包
+ */
+async function getConverter(id) {
+  if (converters.has(id)) return converters.get(id)
+
+  const config = CONFIGS.find((c) => c.id === id) || CONFIGS[0]
+  let mod
+  if (config.to === 'cn') mod = await import('opencc-js/t2cn')
+  else if (config.from === 'cn') mod = await import('opencc-js/cn2t')
+  else mod = await import('opencc-js')
+
+  const converter = mod.Converter({ from: config.from, to: config.to })
+  converters.set(id, converter)
+  return converter
 }
 
-const output = computed(() => {
-  if (!input.value) return ''
-  try {
-    return getConverter(direction.value)(input.value)
-  } catch (e) {
-    message.value = e.message
-    return ''
+const output = ref('')
+const converting = ref(false)
+
+async function convert() {
+  if (!input.value) {
+    output.value = ''
+    return
   }
-})
+
+  converting.value = true
+  try {
+    const converter = await getConverter(direction.value)
+    output.value = converter(input.value)
+    message.value = ''
+  } catch (e) {
+    output.value = ''
+    message.value = e.message
+  } finally {
+    converting.value = false
+  }
+}
+
+watch([input, direction], convert, { immediate: true })
 
 const stats = computed(() => {
   const changed = [...input.value].reduce(
